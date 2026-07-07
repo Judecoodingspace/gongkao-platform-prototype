@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>传题系统临时原型</title>
+    <style>
+      :root {
+        --bg: #f4f6f8;
+        --surface: #ffffff;
+        --surface-muted: #f8fafc;
+        --line: #d9e0e7;
+        --line-strong: #b8c3cf;
+        --text: #1f2933;
+        --muted: #667585;
+        --blue: #2366d1;
+        --blue-soft: #e7f0ff;
+        --green: #16794c;
+        --green-soft: #e5f6ee;
+        --amber: #ad6800;
+        --amber-soft: #fff4dc;
+        --red: #b42318;
+        --red-soft: #ffe9e7;
+        --shadow: 0 10px 28px rgba(31, 41, 51, 0.08);
+        font-family:
+          Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial,
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 1180px;
+        color: var(--text);
+        background: var(--bg);
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: 56px minmax(0, 1fr);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+        box-shadow: 0 1px 0 rgba(31, 41, 51, 0.04);
+        z-index: 2;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .mark {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        background: linear-gradient(135deg, #2366d1, #24a66a);
+        font-weight: 800;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0;
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 26px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        background: var(--surface-muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .status-chip {
+        color: var(--green);
+        background: var(--green-soft);
+        border-color: #b7e6ce;
+      }
+
+      .layout {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(420px, 43%) minmax(680px, 57%);
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .left-workbench {
+        min-height: 0;
+        display: grid;
+        grid-template-rows: minmax(300px, 52%) minmax(260px, 48%);
+        gap: 12px;
+      }
+
+      .panel {
+        min-height: 0;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .panel-header {
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 0 14px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-muted);
+      }
+
+      .panel-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--blue);
+      }
+
+      .panel-body {
+        height: calc(100% - 42px);
+        padding: 14px;
+        overflow: auto;
+      }
+
+      .upload-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .file-name {
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 8px;
+        color: var(--muted);
+        background: #fbfcfe;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .primary-btn,
+      .secondary-btn,
+      .ghost-btn,
+      .danger-btn {
+        height: 34px;
+        border-radius: 7px;
+        padding: 0 12px;
+        border: 1px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        white-space: nowrap;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .primary-btn {
+        color: #fff;
+        background: var(--blue);
+      }
+
+      .secondary-btn {
+        color: var(--blue);
+        background: var(--blue-soft);
+        border-color: #bfd5ff;
+      }
+
+      .ghost-btn {
+        color: var(--text);
+        background: var(--surface);
+        border-color: var(--line);
+      }
+
+      .danger-btn {
+        color: var(--red);
+        background: var(--red-soft);
+        border-color: #ffc7c2;
+      }
+
+      .source-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .source-block {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        padding: 10px 12px;
+        display: grid;
+        gap: 6px;
+        text-align: left;
+        color: inherit;
+      }
+
+      .source-block.active {
+        border-color: var(--blue);
+        background: #f3f8ff;
+        box-shadow: 0 0 0 2px rgba(35, 102, 209, 0.12);
+      }
+
+      .block-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .block-text {
+        margin: 0;
+        line-height: 1.55;
+        font-size: 13px;
+      }
+
+      .analysis-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .analysis-box {
+        min-height: 150px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 8px;
+        padding: 12px;
+        background: #fbfcfe;
+      }
+
+      .analysis-box h3 {
+        margin: 0 0 8px;
+        font-size: 13px;
+      }
+
+      .mini-list {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .right-workbench {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 56px;
+        gap: 12px;
+      }
+
+      .form-panel {
+        min-height: 0;
+        display: grid;
+        grid-template-rows: 42px minmax(0, 1fr) 54px;
+      }
+
+      .form-body {
+        min-height: 0;
+        padding: 14px;
+        overflow: auto;
+      }
+
+      .section {
+        padding-bottom: 14px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .section:last-child {
+        border-bottom: 0;
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .span-3 {
+        grid-column: span 3;
+      }
+
+      .span-4 {
+        grid-column: span 4;
+      }
+
+      .span-5 {
+        grid-column: span 5;
+      }
+
+      .span-6 {
+        grid-column: span 6;
+      }
+
+      .span-7 {
+        grid-column: span 7;
+      }
+
+      .span-8 {
+        grid-column: span 8;
+      }
+
+      .span-12 {
+        grid-column: span 12;
+      }
+
+      label {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--text);
+        outline: none;
+      }
+
+      input,
+      select {
+        height: 34px;
+        padding: 0 10px;
+      }
+
+      textarea {
+        min-height: 84px;
+        resize: vertical;
+        padding: 9px 10px;
+        line-height: 1.55;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 2px rgba(35, 102, 209, 0.14);
+      }
+
+      .segmented,
+      .radio-row,
+      .difficulty {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .segmented button,
+      .radio-row button {
+        height: 32px;
+        border-radius: 7px;
+        border: 1px solid var(--line);
+        color: var(--text);
+        background: var(--surface);
+        padding: 0 11px;
+        font-size: 13px;
+      }
+
+      .segmented button.active,
+      .radio-row button.active {
+        color: var(--blue);
+        border-color: #9fc2ff;
+        background: var(--blue-soft);
+        font-weight: 700;
+      }
+
+      .stars {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+
+      .star {
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        color: #b2bdc8;
+        background: var(--surface);
+        font-size: 17px;
+        line-height: 1;
+      }
+
+      .star.active {
+        color: #c76b00;
+        border-color: #ffc26b;
+        background: var(--amber-soft);
+      }
+
+      .question-editor {
+        min-height: 126px;
+      }
+
+      .option-layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 38%) minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      .option-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .option-row {
+        display: grid;
+        grid-template-columns: 30px 1fr;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .option-letter {
+        height: 30px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        background: var(--surface-muted);
+        color: var(--muted);
+        border: 1px solid var(--line);
+        font-weight: 700;
+      }
+
+      .image-slot {
+        min-height: 154px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        background:
+          linear-gradient(45deg, rgba(35, 102, 209, 0.05) 25%, transparent 25%),
+          linear-gradient(-45deg, rgba(35, 102, 209, 0.05) 25%, transparent 25%),
+          #fbfcfe;
+        background-size: 16px 16px;
+      }
+
+      .answer-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .answer-choice {
+        width: 34px;
+        height: 34px;
+        border-radius: 7px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      .answer-choice.active {
+        color: #fff;
+        background: var(--green);
+        border-color: var(--green);
+      }
+
+      .side-rail {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        display: grid;
+        grid-template-rows: auto 1fr;
+        overflow: hidden;
+      }
+
+      .rail-title {
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--line);
+        text-align: center;
+        font-size: 12px;
+        font-weight: 700;
+        background: var(--surface-muted);
+      }
+
+      .rail-steps {
+        padding: 10px 8px;
+        display: grid;
+        gap: 10px;
+        align-content: start;
+      }
+
+      .rail-step {
+        writing-mode: vertical-rl;
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        color: var(--muted);
+        background: #fbfcfe;
+        font-size: 12px;
+      }
+
+      .rail-step.active {
+        color: var(--green);
+        border-color: #b7e6ce;
+        background: var(--green-soft);
+        font-weight: 700;
+      }
+
+      .footer-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 14px;
+        border-top: 1px solid var(--line);
+        background: var(--surface-muted);
+      }
+
+      .footer-left,
+      .footer-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .toast {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        max-width: 360px;
+        min-height: 42px;
+        display: none;
+        align-items: center;
+        padding: 10px 14px;
+        border: 1px solid #b7e6ce;
+        border-radius: 8px;
+        color: var(--green);
+        background: var(--green-soft);
+        box-shadow: var(--shadow);
+        font-weight: 700;
+        z-index: 5;
+      }
+
+      .toast.show {
+        display: flex;
+      }
+
+      @media (max-width: 1280px) {
+        body {
+          min-width: 1100px;
+        }
+
+        .layout {
+          grid-template-columns: 430px minmax(650px, 1fr);
+        }
+
+        .right-workbench {
+          grid-template-columns: minmax(0, 1fr) 48px;
+        }
+
+        .span-3 {
+          grid-column: span 4;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="mark">传</div>
+          <h1>传题系统</h1>
+          <span class="chip status-chip" id="taskStatus">草稿 · 未提交</span>
+        </div>
+        <div class="top-actions">
+          <span class="chip">2023 国考 · 行测</span>
+          <span class="chip">当前题号 Q-0007</span>
+          <button class="ghost-btn" type="button" data-action="preview">预览</button>
+          <button class="primary-btn" type="button" data-action="submit">提交审核</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="left-workbench">
+          <article class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><span class="dot"></span>题本</div>
+              <span class="chip">Word / PDF 原文</span>
+            </div>
+            <div class="panel-body">
+              <div class="upload-row">
+                <div class="file-name" id="paperFile">未上传题本文件</div>
+                <button class="secondary-btn" type="button" data-upload="paper">上传文件</button>
+              </div>
+              <div class="source-list" id="sourceList">
+                <button class="source-block active" type="button" data-block="0">
+                  <div class="block-meta">
+                    <span>第 12 页 · 段落 04</span>
+                    <span>已选中</span>
+                  </div>
+                  <p class="block-text">
+                    根据给定资料，概括基层治理中“多方协同”面临的主要问题。
+                  </p>
+                </button>
+                <button class="source-block" type="button" data-block="1">
+                  <div class="block-meta">
+                    <span>第 12 页 · 段落 05</span>
+                    <span>可拖拽</span>
+                  </div>
+                  <p class="block-text">
+                    A. 完善协商机制 B. 建立数据共享平台 C. 提高行政审批效率 D. 推动社会组织参与
+                  </p>
+                </button>
+                <button class="source-block" type="button" data-block="2">
+                  <div class="block-meta">
+                    <span>第 13 页 · 图片 01</span>
+                    <span>图表区域</span>
+                  </div>
+                  <p class="block-text">
+                    图 1：某地基层公共服务满意度变化趋势，含 2019-2023 年五组数据。
+                  </p>
+                </button>
+                <button class="source-block" type="button" data-block="3">
+                  <div class="block-meta">
+                    <span>第 13 页 · 段落 09</span>
+                    <span>答案线索</span>
+                  </div>
+                  <p class="block-text">
+                    参考答案强调“厘清职责边界、统一信息入口、建立长效反馈机制”。
+                  </p>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><span class="dot"></span>解析</div>
+              <span class="chip">答案 / 解析材料</span>
+            </div>
+            <div class="panel-body">
+              <div class="upload-row">
+                <div class="file-name" id="analysisFile">未上传解析文件</div>
+                <button class="secondary-btn" type="button" data-upload="analysis">上传文件</button>
+              </div>
+              <div class="analysis-grid">
+                <div class="analysis-box">
+                  <h3>同版匹配</h3>
+                  <ol class="mini-list">
+                    <li>与上方题本保持页码对应。</li>
+                    <li>解析区高度可调，便于对照。</li>
+                    <li>选中原文块后自动定位相关解析。</li>
+                  </ol>
+                </div>
+                <div class="analysis-box">
+                  <h3>当前解析摘录</h3>
+                  <p class="block-text">
+                    本题考查归纳概括能力。作答时应围绕职责、数据、反馈三个方面组织答案，不宜扩展到政策评价。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="right-workbench">
+          <article class="panel form-panel">
+            <div class="panel-header">
+              <div class="panel-title"><span class="dot"></span>题目结构化录入</div>
+              <div class="top-actions">
+                <span class="chip">自动保存 14:32</span>
+                <button class="ghost-btn" type="button" data-action="draft">保存草稿</button>
+              </div>
+            </div>
+
+            <div class="form-body">
+              <section class="section">
+                <h2 class="section-title">基础信息</h2>
+                <div class="form-grid">
+                  <div class="field span-12">
+                    <label>科目</label>
+                    <div class="segmented" data-choice-group="subject">
+                      <button class="active" type="button">行测</button>
+                      <button type="button">申论</button>
+                      <button type="button">中论</button>
+                    </div>
+                  </div>
+                  <div class="field span-12">
+                    <label>类型</label>
+                    <div class="segmented" data-choice-group="type">
+                      <button class="active" type="button">常识</button>
+                      <button type="button">言语理解</button>
+                      <button type="button">判断推理</button>
+                      <button type="button">数量关系</button>
+                      <button type="button">资料分析</button>
+                      <button type="button">资料评价</button>
+                    </div>
+                  </div>
+                  <div class="field span-6">
+                    <label for="knowledge">知识点</label>
+                    <select id="knowledge">
+                      <option>下拉框选择，与上方类型联动</option>
+                      <option>归纳概括</option>
+                      <option>图表分析</option>
+                      <option>逻辑判断</option>
+                      <option>资料计算</option>
+                    </select>
+                  </div>
+                  <div class="field span-3">
+                    <label for="year">年份</label>
+                    <input id="year" value="2023" />
+                  </div>
+                  <div class="field span-3">
+                    <label for="province">省份</label>
+                    <input id="province" value="国家公务员" />
+                  </div>
+                  <div class="field span-12">
+                    <label>难度</label>
+                    <div class="difficulty">
+                      <div class="stars" id="stars">
+                        <button class="star active" type="button" data-star="1">★</button>
+                        <button class="star active" type="button" data-star="2">★</button>
+                        <button class="star active" type="button" data-star="3">★</button>
+                        <button class="star" type="button" data-star="4">★</button>
+                        <button class="star" type="button" data-star="5">★</button>
+                      </div>
+                      <span class="chip" id="difficultyLabel">中等 · 3 星</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="section">
+                <h2 class="section-title">题干与问题</h2>
+                <div class="form-grid">
+                  <div class="field span-12">
+                    <label for="stem">题干</label>
+                    <textarea class="question-editor" id="stem">根据给定资料，概括基层治理中“多方协同”面临的主要问题。</textarea>
+                  </div>
+                  <div class="field span-12">
+                    <label for="question">问题</label>
+                    <input id="question" value="下列哪项最能概括材料反映的治理难点？" />
+                  </div>
+                </div>
+              </section>
+
+              <section class="section">
+                <h2 class="section-title">选项与附图</h2>
+                <div class="form-grid">
+                  <div class="field span-12">
+                    <label>选项模式</label>
+                    <div class="radio-row" data-choice-group="optionMode">
+                      <button class="active" type="button">无图</button>
+                      <button type="button">有图</button>
+                    </div>
+                  </div>
+                  <div class="span-12 option-layout">
+                    <div class="option-list">
+                      <div class="option-row">
+                        <span class="option-letter">A</span>
+                        <input value="协同主体职责边界不清" />
+                      </div>
+                      <div class="option-row">
+                        <span class="option-letter">B</span>
+                        <input value="治理资源过度集中于单一部门" />
+                      </div>
+                      <div class="option-row">
+                        <span class="option-letter">C</span>
+                        <input value="信息共享和反馈机制不完善" />
+                      </div>
+                      <div class="option-row">
+                        <span class="option-letter">D</span>
+                        <input value="公共服务需求完全一致" />
+                      </div>
+                    </div>
+                    <div class="image-slot" id="imageSlot">粘贴或拖入题图</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="section">
+                <h2 class="section-title">答案与解析</h2>
+                <div class="form-grid">
+                  <div class="field span-4">
+                    <label>正确答案</label>
+                    <div class="answer-row" id="answerRow">
+                      <button class="answer-choice active" type="button">A</button>
+                      <button class="answer-choice" type="button">B</button>
+                      <button class="answer-choice active" type="button">C</button>
+                      <button class="answer-choice" type="button">D</button>
+                    </div>
+                  </div>
+                  <div class="field span-8">
+                    <label for="score">分值 / 评分备注</label>
+                    <input id="score" value="2 分；多选题，少选得 1 分，错选不得分" />
+                  </div>
+                  <div class="field span-12">
+                    <label for="explanation">解析</label>
+                    <textarea id="explanation">粘贴、引用、改写公式会被记录到版本日志中。本题答案来自材料第 12-13 页，核心依据是职责边界、信息共享和反馈机制。</textarea>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="footer-bar">
+              <div class="footer-left">
+                <span class="chip">来源：第 12 页 · 段落 04</span>
+                <span class="chip">版本：v0 草稿</span>
+              </div>
+              <div class="footer-right">
+                <button class="ghost-btn" type="button" data-action="reset">重置</button>
+                <button class="secondary-btn" type="button" data-action="draft">保存草稿</button>
+                <button class="primary-btn" type="button" data-action="submit">提交审核</button>
+              </div>
+            </div>
+          </article>
+
+          <aside class="side-rail">
+            <div class="rail-title">流程</div>
+            <div class="rail-steps">
+              <div class="rail-step active">上传题本</div>
+              <div class="rail-step active">拆解题干</div>
+              <div class="rail-step">补全选项</div>
+              <div class="rail-step">审核入库</div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast">已保存</div>
+
+    <script>
+      const $ = (selector, scope = document) => scope.querySelector(selector);
+      const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
+
+      const toast = $("#toast");
+      const taskStatus = $("#taskStatus");
+      let toastTimer;
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+      }
+
+      $$("[data-choice-group]").forEach((group) => {
+        group.addEventListener("click", (event) => {
+          const button = event.target.closest("button");
+          if (!button) return;
+          $$("button", group).forEach((item) => item.classList.remove("active"));
+          button.classList.add("active");
+          if (group.dataset.choiceGroup === "optionMode") {
+            $("#imageSlot").textContent =
+              button.textContent.trim() === "有图" ? "已启用题图粘贴区" : "粘贴或拖入题图";
+          }
+        });
+      });
+
+      $("#stars").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-star]");
+        if (!button) return;
+        const value = Number(button.dataset.star);
+        $$(".star").forEach((star) => {
+          star.classList.toggle("active", Number(star.dataset.star) <= value);
+        });
+        const labels = ["很易", "偏易", "中等", "偏难", "很难"];
+        $("#difficultyLabel").textContent = `${labels[value - 1]} · ${value} 星`;
+      });
+
+      $("#answerRow").addEventListener("click", (event) => {
+        const button = event.target.closest(".answer-choice");
+        if (!button) return;
+        button.classList.toggle("active");
+      });
+
+      $("#sourceList").addEventListener("click", (event) => {
+        const block = event.target.closest(".source-block");
+        if (!block) return;
+        $$(".source-block").forEach((item) => item.classList.remove("active"));
+        block.classList.add("active");
+        $(".footer-left .chip").textContent = `来源：${$(".block-meta span", block).textContent}`;
+        showToast("已切换原文定位");
+      });
+
+      $$("[data-upload]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = button.dataset.upload === "paper" ? $("#paperFile") : $("#analysisFile");
+          const fileName =
+            button.dataset.upload === "paper"
+              ? "2023-国考-行测-真题.docx"
+              : "2023-国考-行测-解析.docx";
+          target.textContent = fileName;
+          showToast("文件已加入原型任务");
+        });
+      });
+
+      $$("[data-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const action = button.dataset.action;
+          if (action === "submit") {
+            taskStatus.textContent = "待审核 · 已提交";
+            taskStatus.classList.add("status-chip");
+            showToast("已提交审核");
+          }
+          if (action === "draft") {
+            taskStatus.textContent = "草稿 · 已保存";
+            showToast("草稿已保存");
+          }
+          if (action === "preview") showToast("预览态：字段完整度 86%");
+          if (action === "reset") showToast("原型未执行真实重置");
+        });
+      });
+    </script>
+  </body>
+</html>

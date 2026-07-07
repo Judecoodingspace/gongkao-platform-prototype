@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.venv/
+venv/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+.next/
+.vite/
+*.tsbuildinfo
+
+# Test, coverage, and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
+htmlcov/
+playwright-report/
+test-results/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.codex/
+
+# Local databases and service data
+*.db
+*.sqlite
+*.sqlite3
+postgres-data/
+data/postgres/
+
+# Uploaded local data
+data/uploads/
+data/tmp/
+
+# Local scratch and generated artifacts
+tmp/
+work/
+outputs/
+~$*
+
+# Internal review sources and generated printouts
+docs/review/raw_docs/
+/docs/gongkao.pdf
