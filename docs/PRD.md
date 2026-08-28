@@ -43,6 +43,7 @@ Manages users, permissions, source papers, taxonomies, releases, and system conf
 - Answer and explanation material upload records
 - Manual question creation
 - Stem, question, options, answer, and explanation input
+- Reusable, versioned source materials that can be linked to multiple question versions without duplicating passage text
 - Subject, question type, knowledge point, year, province, and difficulty annotation
 - Draft, submitted, approved, and rejected states
 - Source provenance
@@ -150,6 +151,10 @@ Extensible fields:
 - Without review workflow, question quality is uncontrollable.
 - Without sufficient source provenance, disputed questions are hard to inspect.
 
+### 12. V1 Pure-Text Pilot
+
+The first runnable workflow accepts text-only questions. A LibreOffice-derived HTML preview provides copyable source text, while a constrained rich-text editor handles text entry and basic formatting. Questions depending on formula images, diagrams, charts, screenshots, image-only options, or mixed text/image layout are deferred to the next workflow stage. This is a delivery boundary, not a removal of the long-term provenance and content-block model.
+
 ## 中文版本
 
 ### 1. 背景
@@ -193,6 +198,7 @@ Extensible fields:
 - 解析材料上传记录
 - 人工创建题目
 - 题干、问题、选项、答案、解析录入
+- 可被多个题目版本按序引用的版本化共享材料，材料正文只保存一次，不重复复制到每道题中
 - 科目、题型、知识点、年份、省份、难度标注
 - 草稿、待审核、已通过、已驳回状态
 - 来源追溯
@@ -299,3 +305,9 @@ Extensible fields:
 - 如果没有版本化，后续纠错会污染已发布题库。
 - 如果没有审核流，题库质量不可控。
 - 如果原文追溯不足，后续争议题难以定位。
+
+### 12. V1 纯文本题试行
+
+第一个可运行流程仅处理纯文本题。左侧使用 LibreOffice 衍生 HTML 预览提供可复制原文，右侧使用受限富文本编辑器录入文字和基础格式。依赖公式图、图形、统计图、截图、图片选项或图文混排的题目后置到下一阶段图文工作流。该范围是交付边界，不代表删除长期来源追溯和内容块模型。
+
+申论 V1 采用主观题录入模式：归纳概括、提出对策、综合分析、应用文写作和大作文作为受控知识点；每题保存独有的题干正文、要求、问题和参考答案。申论界面不展示行测类型、A-D 选项或正确答案单选。来源文档中的专项顺序和专项内题序应保留，用于录题导航和追溯。

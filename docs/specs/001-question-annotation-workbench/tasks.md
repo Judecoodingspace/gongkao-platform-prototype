@@ -9,6 +9,12 @@
 - [ ] Collect feedback from at least one future annotator.
 - [ ] Decide whether difficulty is set by the annotator, reviewer, or both.
 - [ ] Decide the first taxonomy for subject, question type, and knowledge point.
+- [x] Define the V1 pure-text question boundary: text-only stem, question, options, and explanation; mixed-content questions are deferred.
+- [x] Add a V1 prototype route using LibreOffice-derived HTML preview and constrained rich-text editing.
+- [ ] Validate V1 with an annotator using at least one text-only paper and record copy/paste cleanup observations without committing source content.
+- [ ] Decide the V2 mixed-content entry criteria before enabling image import in the production workbench.
+- [x] Define Shenlun V1 as a subjective-question mode with specialty knowledge points and no A-D option/answer workflow.
+- [x] Add specialty-grouped navigation to the static prototype while preserving stable global question-slot identity.
 
 ### Phase 1: Design Baseline
 
@@ -20,13 +26,30 @@
 
 ### Phase 2: Technical Foundation
 
-- [ ] Decide frontend stack.
-- [ ] Decide backend stack.
-- [ ] Decide database and migration tool.
+- [x] Decide frontend stack.
+- [x] Decide backend stack.
+- [x] Decide database and migration tool.
 - [ ] Decide file storage strategy.
 - [ ] Decide first parser POC approach.
 - [ ] Create real application repository structure.
 - [ ] Add CI checks.
+
+### Shenlun V1 Persistence Runbook
+
+- [x] `SHV1-001` Review and approve gate `G-01`; record exact stack and runtime versions in `plan.md`.
+- [x] `SHV1-002` Review and approve gate `G-02`; resolve every open contract question without changing field names in implementation code first.
+- [x] `SHV1-003` Review and approve gate `G-03`; create/reuse a dedicated GitHub issue and record the reviewed migration boundary.
+- [ ] `SHV1-004` Scaffold only the approved backend, migration, and test structure; add no frontend persistence yet.
+- [ ] `SHV1-005` Implement migrations `M-001` through `M-005` from `migration-plan.md` with sanitized reference seeds only.
+- [ ] `SHV1-006` Add migration upgrade, schema inspection, idempotent seed, and disposable-database recovery tests.
+- [ ] `SHV1-007` Implement domain/service transactions for draft create, optimistic-lock patch, submit, and correction-version creation.
+- [ ] `SHV1-008` Implement the endpoints and errors in `api-contract.md`; do not add review endpoints or mixed-content payloads in this slice.
+- [ ] `SHV1-009` Add all required contract tests, including exact four-field round-trip, source-order conflict, stale update, and immutable submitted version.
+- [ ] `SHV1-010` Complete gate `G-04`; record migration commands, test counts, rollback notes, and limitations in the GitHub issue.
+- [ ] `SHV1-011` Convert the approved static behavior into the selected production frontend and wire save/reload/submit using plain-text payloads.
+- [ ] `SHV1-012` Complete gate `G-05` with sanitized end-to-end fixtures, interaction tests, screenshot checks, and an issue completion note.
+
+Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` through `SHV1-003` are approved, `SHV1-011` before `SHV1-010`, or mark a task complete without the checks named in that task.
 
 ### Phase 3: Document Import
 
@@ -84,13 +107,30 @@
 
 ### 阶段 2：技术基础
 
-- [ ] 确定前端技术栈。
-- [ ] 确定后端技术栈。
-- [ ] 确定数据库和迁移工具。
+- [x] 确定前端技术栈。
+- [x] 确定后端技术栈。
+- [x] 确定数据库和迁移工具。
 - [ ] 确定文件存储策略。
 - [ ] 确定第一版解析器 POC 方案。
 - [ ] 创建正式应用仓库结构。
 - [ ] 增加 CI 检查。
+
+### 申论 V1 持久化执行清单
+
+- [x] `SHV1-001` 评审并批准 `G-01`，在 `plan.md` 记录准确技术栈和运行时版本。
+- [x] `SHV1-002` 评审并批准 `G-02`，先解决契约问题，不得先在实现代码中自行改字段名。
+- [x] `SHV1-003` 评审并批准 `G-03`，创建或复用专用 GitHub issue，记录已评审的迁移边界。
+- [ ] `SHV1-004` 只搭建已批准的后端、迁移和测试结构，暂不连接前端持久化。
+- [ ] `SHV1-005` 按 `migration-plan.md` 实现 `M-001` 至 `M-005`，只能加入脱敏的受控种子数据。
+- [ ] `SHV1-006` 增加迁移升级、schema 检查、种子幂等和一次性测试数据库恢复测试。
+- [ ] `SHV1-007` 实现草稿创建、乐观锁更新、提交和新建修订版本的领域服务事务。
+- [ ] `SHV1-008` 实现 `api-contract.md` 中的端点和错误；本切片不得扩展审核端点或图文 payload。
+- [ ] `SHV1-009` 增加全部契约测试，包括四字段原样往返、来源顺序冲突、过期更新和已提交版本不可变。
+- [ ] `SHV1-010` 完成 `G-04`，在 GitHub issue 记录迁移命令、测试数量、回滚说明和已知限制。
+- [ ] `SHV1-011` 将已确认的静态交互迁移到选定正式前端，并用纯文本 payload 接通保存、重载和提交。
+- [ ] `SHV1-012` 用脱敏端到端 fixture、交互测试、截图检查和 issue 完成记录通过 `G-05`。
+
+以上任务按依赖排序。Terra 不得在 `SHV1-001` 至 `SHV1-003` 未批准时开始 `SHV1-004`，不得在 `SHV1-010` 前开始 `SHV1-011`，也不得在未执行任务所列检查时将其标记完成。
 
 ### 阶段 3：文档导入
 

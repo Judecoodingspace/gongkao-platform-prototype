@@ -49,6 +49,11 @@ data/postgres/
 # Uploaded local data
 data/uploads/
 data/tmp/
+docs/raw_doc/
+docs/docx-poc-results/
+docs/docling-poc-results/
+docs/libreoffice-poc-results/
+docs/document-block-poc-results/
 
 # Local scratch and generated artifacts
 tmp/
@@ -57,5 +62,9 @@ outputs/
 ~$*
 
 # Internal review sources and generated printouts
+docs/review/*.docx
 docs/review/raw_docs/
 /docs/gongkao.pdf
+
+# Local prototype exports require a separate privacy review before publishing
+prototypes/question-bank-prototype/*.pdf

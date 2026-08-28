@@ -7,6 +7,9 @@ This project is a maintainable, production-oriented platform for manually extrac
 ## Current State
 
 - The project has no production app code yet.
+- Gates `G-01`, `G-02`, and `G-03` are approved for the Shenlun V1 persistence slice; implementation starts at `SHV1-004`.
+- The approved stack is React 19/TypeScript/Ant Design, FastAPI/Pydantic/SQLAlchemy/Alembic on CPython 3.12, and PostgreSQL 16.
+- Production work is split into independent sibling repositories: `D:\gongkao-question-bank-api` and `D:\gongkao-question-bank-web`. This repository remains the specification/prototype/POC reference.
 - A temporary clickable HTML prototype exists at `prototypes/question-bank-prototype/index.html`.
 - The initial documentation scaffold has been created under `docs/`.
 - The first scoped feature is `001-question-annotation-workbench`.
@@ -58,8 +61,8 @@ The prototype is intentionally static and dependency-free. It is for discussion,
 1. Review `docs/PRD.md` with the project stakeholders.
 2. Review the clickable prototype with senior students, annotators, and teachers.
 3. Convert agreed UI into a Figma high-fidelity prototype.
-4. Decide the first real technical stack and repository layout.
-5. Implement the smallest backend and frontend slice only after the first spec is accepted.
+4. Start `SHV1-004`: scaffold only the approved API, migration, and backend-test structure.
+5. Complete backend gate `G-04` before production React persistence wiring.
 
 ## Recommended First Implementation Slice
 
@@ -72,10 +75,15 @@ Build a minimal local workflow:
 5. Allow manual creation of one draft question linked to a source block.
 6. Submit that draft question for review.
 
+## Repository Split And Freeze
+
+- The Shenlun V1 HTML prototype and governing specifications are preserved by the annotated tag documented in `FROZEN_BASELINE.md`.
+- PDF exports under the prototype directory remain local and ignored until separately reviewed for private source content.
+- Backend implementation starts in `gongkao-question-bank-api` at `SHV1-004`.
+- The Web repository contains documentation only until `G-04` is complete.
+
 ## Open Questions
 
-- Which backend stack will be used: FastAPI, NestJS, Django, or another framework?
-- Which frontend stack will be used: React plus Ant Design, Vue plus TDesign, or another stack?
 - Will Docling be adopted as the first parser POC?
 - What are the exact province/year/subject/type taxonomies?
 - What data privacy constraints apply to historical papers and answer keys?

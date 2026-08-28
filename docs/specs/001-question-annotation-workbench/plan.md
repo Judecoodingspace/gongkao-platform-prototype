@@ -2,15 +2,32 @@
 
 ## English Version
 
+### G-01 Approved Technology Baseline (2026-08-23)
+
+The following baseline is approved for the Shenlun V1 persistence slice:
+
+- Web: React 19, TypeScript 5.7, and Ant Design 5, built with Node.js 22 LTS and npm 10.
+- API: CPython 3.12, FastAPI, Pydantic, SQLAlchemy 2.x, and Alembic 1.x.
+- Database: PostgreSQL 16.
+- Verification: Pytest for backend/migration/API tests and Playwright for production-web interaction and screenshot tests.
+
+Use versions compatible with these approved major versions and pin exact dependency versions in generated lockfiles. Do not use the Python 3.13 DOCX POC environment as the production API runtime, because parser and ML dependency behavior in that environment is not the production application contract.
+
+### V1 Pure-Text Pilot Addendum
+
+The next prototype slice validates the operational loop for text-only questions before the production application implementation begins. It uses LibreOffice-derived HTML as the copyable source preview and a constrained rich-text editor for stem, question text, options, and explanation. Images, video, tables, attachments, links, arbitrary HTML insertion, and mixed-content questions are out of scope.
+
+The editor HTML is a prototype draft representation, not the future database contract. `DocumentParser`, `DocumentBlock`, `SourceSpan`, `DocumentAsset`, and `ContentBlock` remain the planned V2 route for mixed-content questions.
+
 ### Product Approach
 
 First make the manual workflow reliable. Document parsing and AI assistance should improve efficiency but must not become the source of truth in the MVP.
 
-### Candidate Architecture
+### Approved Shenlun V1 Architecture
 
 #### Frontend
 
-Candidate stack:
+Selected stack:
 
 - React
 - TypeScript
@@ -25,13 +42,12 @@ Rationale:
 
 #### Backend
 
-Candidate stack options:
+Selected stack:
 
 - FastAPI with Python
-- NestJS with TypeScript
-- Django with Python
-
-Decision pending.
+- Pydantic
+- SQLAlchemy 2.x
+- Alembic 1.x
 
 Important backend capabilities:
 
@@ -44,7 +60,7 @@ Important backend capabilities:
 
 #### Database
 
-Candidate:
+Selected:
 
 - PostgreSQL
 
@@ -83,18 +99,16 @@ prototypes/
 tests/
 ```
 
-This layout is not final. Do not create it until the stack decision is made.
+This layout is the approved repository direction. `SHV1-004` begins with the API, migration, and backend-test portions only; the production web application begins after `G-04`.
 
 ### First Implementation Slice
 
-1. Create minimal project app structure.
-2. Define database schema for paper, paper version, document block, question, question version, and review record.
-3. Add DOCX upload endpoint.
-4. Store uploaded file metadata.
-5. Parse or mock document blocks.
-6. Render source blocks in the workbench.
-7. Create one draft question linked to a source block.
-8. Submit draft question for review.
+1. Scaffold the approved FastAPI, Alembic, and backend test structure.
+2. Implement migrations `M-001` through `M-005`, including reusable source materials and exact question-version links.
+3. Implement transactional draft/material create, patch, submit, and correction-version services.
+4. Implement the approved API contract and errors.
+5. Pass migration and API contract tests to complete `G-04`.
+6. Begin React persistence wiring only after `G-04`.
 
 ### Key Risks
 
@@ -111,17 +125,47 @@ This layout is not final. Do not create it until the stack decision is made.
 - Frontend interaction tests for draft save and submit.
 - Screenshot checks for the annotation workbench.
 
+### Shenlun V1 Persistence Execution Gates
+
+The executable contract is split between:
+
+- [`data-model.md`](./data-model.md): entity ownership, versioning, and source-order semantics;
+- [`api-contract.md`](./api-contract.md): framework-neutral request, response, validation, concurrency, and transaction behavior;
+- [`migration-plan.md`](./migration-plan.md): PostgreSQL mapping, migration order, recovery, and verification.
+- [`g02-g03-review.md`](./g02-g03-review.md): approved gate decisions, resolved findings, and implementation entry criteria.
+
+No implementation agent may skip these gates:
+
+- `G-01 Stack`: stakeholders explicitly select frontend, backend, database, ORM, migration tool, package manager, and supported runtime versions. The current candidate list is not a decision.
+- `G-02 Contract` (`approved 2026-08-28`): four Shenlun fields, reusable versioned source materials, five controlled knowledge points, source-order semantics, API endpoints, immutable-version behavior, idempotency, and optimistic locking are fixed in the contract.
+- `G-03 Migration` (`approved 2026-08-28`): SQL naming, non-cascading FK behavior, deferred current-version ownership FKs, indexes, deterministic seeds, disposable PostgreSQL test database, backup, and rollback policy are fixed in the migration plan.
+- `G-04 Backend acceptance`: migrations and backend contract tests pass before frontend persistence wiring begins.
+- `G-05 End-to-end acceptance`: the production frontend can save, reload, switch, submit, and conflict-test sanitized drafts without bypassing human review.
+
+Terra must execute tasks `SHV1-001` through `SHV1-012` in `tasks.md` in order. It must stop at any unapproved gate, preserve unrelated worktree changes, and record each implementation checkpoint in the relevant GitHub issue with no private paper content.
+
 ## 中文版本
 
 ### 产品策略
 
 先以人工流程跑通为主，文档解析和 AI 辅助只作为提高效率的手段。MVP 不追求全自动拆题。
 
-### 候选架构
+### G-01 已批准技术基线（2026-08-23）
+
+申论 V1 持久化切片使用以下已批准基线：
+
+- Web：React 19、TypeScript 5.7、Ant Design 5；运行于 Node.js 22 LTS 和 npm 10。
+- API：CPython 3.12、FastAPI、Pydantic、SQLAlchemy 2.x、Alembic 1.x。
+- 数据库：PostgreSQL 16。
+- 验证：后端、迁移和 API 使用 Pytest；正式 Web 交互和截图使用 Playwright。
+
+依赖版本必须与以上已批准主版本兼容，并在生成的 lockfile 中锁定精确版本。DOCX POC 使用的 Python 3.13 环境不作为生产 API 运行时，因为其中解析和机器学习依赖的行为不构成正式应用契约。
+
+### 已批准的申论 V1 架构
 
 #### 前端
 
-候选技术栈：
+已选技术栈：
 
 - React
 - TypeScript
@@ -136,13 +180,12 @@ This layout is not final. Do not create it until the stack decision is made.
 
 #### 后端
 
-候选技术栈：
+已选技术栈：
 
 - Python FastAPI
-- TypeScript NestJS
-- Python Django
-
-待决策。
+- Pydantic
+- SQLAlchemy 2.x
+- Alembic 1.x
 
 重要后端能力：
 
@@ -155,7 +198,7 @@ This layout is not final. Do not create it until the stack decision is made.
 
 #### 数据库
 
-候选：
+已选：
 
 - PostgreSQL
 
@@ -194,18 +237,16 @@ prototypes/
 tests/
 ```
 
-该布局尚未最终确定。在技术栈决策前，不要创建正式应用结构。
+该布局已作为申论 V1 的工程基线。`SHV1-004` 先创建 API、迁移和后端测试部分；正式 Web 应用在 `G-04` 通过后开始。
 
 ### 第一段实现切片
 
-1. 创建最小项目应用结构。
-2. 定义 paper、paper version、document block、question、question version 和 review record 的数据库 schema。
-3. 增加 DOCX 上传接口。
-4. 存储上传文件元数据。
-5. 解析或模拟文档块。
-6. 在工作台渲染原文块。
-7. 创建一条绑定原文块的题目草稿。
-8. 提交题目草稿进入审核。
+1. 搭建已批准的 FastAPI、Alembic 和后端测试结构。
+2. 实现 `M-001` 至 `M-005`，包括可复用共享材料和准确题目版本关联。
+3. 实现材料/题目草稿创建、更新、提交和新建修订版本的事务服务。
+4. 实现已批准的 API 契约和错误语义。
+5. 通过迁移和 API 契约测试，完成 `G-04`。
+6. 只有在 `G-04` 通过后才开始 React 持久化接线。
 
 ### 关键风险
 
@@ -221,3 +262,22 @@ tests/
 - 数据库迁移测试。
 - 保存草稿和提交审核的前端交互测试。
 - 拆题工作台截图检查。
+
+### 申论 V1 持久化执行门禁
+
+可执行工程契约拆分为：
+
+- [`data-model.md`](./data-model.md)：实体归属、版本化和专项来源顺序语义；
+- [`api-contract.md`](./api-contract.md)：与框架无关的请求、响应、校验、并发和事务行为；
+- [`migration-plan.md`](./migration-plan.md)：PostgreSQL 映射、迁移顺序、恢复和验证。
+- [`g02-g03-review.md`](./g02-g03-review.md)：已批准门禁决策、已解决问题和实现入口条件。
+
+后续模型不得跳过以下门禁：
+
+- `G-01 技术栈`：相关方明确选择前端、后端、数据库、ORM、迁移工具、包管理器和支持的运行时版本；当前候选列表不等于已决策。
+- `G-02 契约`（`2026-08-28 已批准`）：申论四字段、可复用版本化共享材料、五个受控知识点、专项来源顺序、API 端点、版本不可变、幂等和乐观锁规则已固定。
+- `G-03 迁移`（`2026-08-28 已批准`）：SQL 命名、非级联外键、延迟当前版本归属外键、索引、确定性种子、一次性 PostgreSQL 测试库、备份与回滚策略已固定。
+- `G-04 后端验收`：迁移和后端契约测试通过后，才能开始前端持久化接线。
+- `G-05 端到端验收`：正式前端使用脱敏草稿完成保存、重载、切题、提交和并发冲突验证，且不能绕过人工审核。
+
+Terra 必须按 `tasks.md` 中 `SHV1-001` 至 `SHV1-012` 的依赖顺序执行。任一门禁未批准时应停止，不得猜测；必须保留工作区无关修改，并在对应 GitHub issue 记录每个实现检查点，且不得包含私有试卷内容。
