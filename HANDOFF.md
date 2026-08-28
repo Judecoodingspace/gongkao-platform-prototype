@@ -10,6 +10,8 @@ This project is a maintainable, production-oriented platform for manually extrac
 - Gates `G-01`, `G-02`, and `G-03` are approved for the Shenlun V1 persistence slice; implementation starts at `SHV1-004`.
 - The approved stack is React 19/TypeScript/Ant Design, FastAPI/Pydantic/SQLAlchemy/Alembic on CPython 3.12, and PostgreSQL 16.
 - Production work is split into independent sibling repositories: `D:\gongkao-question-bank-api` and `D:\gongkao-question-bank-web`. This repository remains the specification/prototype/POC reference.
+- API repository: `https://github.com/Judecoodingspace/gongkao-question-bank-api` (private); `SHV1-004` completed at commit `a73f24a`.
+- Web repository: `https://github.com/Judecoodingspace/gongkao-question-bank-web` (private); documentation-only baseline at commit `f5a172c`.
 - A temporary clickable HTML prototype exists at `prototypes/question-bank-prototype/index.html`.
 - The initial documentation scaffold has been created under `docs/`.
 - The first scoped feature is `001-question-annotation-workbench`.
@@ -79,7 +81,7 @@ Build a minimal local workflow:
 
 - The Shenlun V1 HTML prototype and governing specifications are preserved by the annotated tag documented in `FROZEN_BASELINE.md`.
 - PDF exports under the prototype directory remain local and ignored until separately reviewed for private source content.
-- Backend implementation starts in `gongkao-question-bank-api` at `SHV1-004`.
+- Backend scaffolding `SHV1-004` is complete; the next backend task is `SHV1-005` for approved migrations `M-001` through `M-005`.
 - The Web repository contains documentation only until `G-04` is complete.
 
 ## Open Questions

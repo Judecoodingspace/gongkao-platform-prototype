@@ -1004,3 +1004,30 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - `SHV1-002`、`SHV1-003` 完成；Terra 可以从 `SHV1-004` 开始搭建已批准的后端、迁移和测试结构。
 
 ---
+
+### REV-20260828-02: Frozen baseline and three-repository split / 冻结基线与三仓库拆分
+
+**Decision / 决策**
+
+- 当前 `gongkao-question-bank-platform` 仓库保留为规格、评审、文档解析 POC 和高保真参考仓库，不再承载生产前后端代码。
+- 冻结提交为 `533e172`，注释标签为 `shenlun-v1-hifi-spec-baseline-2026-08-28`；标签与提交均已推送。
+- 正式 API 独立为私有仓库 `Judecoodingspace/gongkao-question-bank-api`；正式 Web 独立为私有仓库 `Judecoodingspace/gongkao-question-bank-web`。
+- API 使用 uv 管理 CPython 3.12、`pyproject.toml` 和 `uv.lock`。Web 在 `G-04` 前保持仅文档状态，不创建 React 工程。
+- 本地高保真 PDF 未经隐私审查，不进入冻结提交；HTML 原型是可审计的冻结交互参考。
+
+**Implementation / 实现**
+
+- `SHV1-004` 已在 API 仓库提交 `a73f24a` 完成：FastAPI 应用、健康端点、配置与数据库边界、空 Alembic 框架、PostgreSQL 16 Compose、OpenAPI 导出和测试骨架。
+- Web 仓库提交 `f5a172c` 只包含 README、架构边界、AGENTS 和忽略规则；不存在 `package.json` 或 `src/`。
+
+**Verification / 验证**
+
+- API：Ruff 通过；MyPy 严格模式检查 22 个源文件通过；Pytest 4 项通过且无警告；OpenAPI、Alembic heads 和 Compose 配置检查通过。
+- API 临时启动成功，`GET /api/v1/health` 返回 HTTP 200 和 `{ "status": "ok" }`，验证后已停止服务。
+- 参考仓库原始试卷、评审 DOCX、所有 POC 结果目录和本地 PDF 保持 Git 忽略。
+
+**Next step / 下一步**
+
+- 在 API 仓库开始 `SHV1-005`，实现 `M-001` 至 `M-005`；在 `G-04` 前不开始 React 持久化。
+
+---

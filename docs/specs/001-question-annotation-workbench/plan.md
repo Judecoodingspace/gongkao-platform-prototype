@@ -7,7 +7,7 @@
 The following baseline is approved for the Shenlun V1 persistence slice:
 
 - Web: React 19, TypeScript 5.7, and Ant Design 5, built with Node.js 22 LTS and npm 10.
-- API: CPython 3.12, FastAPI, Pydantic, SQLAlchemy 2.x, and Alembic 1.x.
+- API: CPython 3.12, FastAPI, Pydantic, SQLAlchemy 2.x, and Alembic 1.x; dependencies are managed by uv with `pyproject.toml` and an exact `uv.lock`.
 - Database: PostgreSQL 16.
 - Verification: Pytest for backend/migration/API tests and Playwright for production-web interaction and screenshot tests.
 
@@ -155,7 +155,7 @@ Terra must execute tasks `SHV1-001` through `SHV1-012` in `tasks.md` in order. I
 申论 V1 持久化切片使用以下已批准基线：
 
 - Web：React 19、TypeScript 5.7、Ant Design 5；运行于 Node.js 22 LTS 和 npm 10。
-- API：CPython 3.12、FastAPI、Pydantic、SQLAlchemy 2.x、Alembic 1.x。
+- API：CPython 3.12、FastAPI、Pydantic、SQLAlchemy 2.x、Alembic 1.x；依赖使用 uv、`pyproject.toml` 和精确 `uv.lock` 管理。
 - 数据库：PostgreSQL 16。
 - 验证：后端、迁移和 API 使用 Pytest；正式 Web 交互和截图使用 Playwright。
 
