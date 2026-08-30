@@ -1031,3 +1031,28 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - 在 API 仓库开始 `SHV1-005`，实现 `M-001` 至 `M-005`；在 `G-04` 前不开始 React 持久化。
 
 ---
+
+### REV-20260830-01: SHV1-005 and SHV1-006 migration completion / SHV1-005 与 SHV1-006 迁移完成
+
+**Implementation / 实现**
+
+- API 仓库 `SHV1-005` 已以独立提交 `dcbc2df` 完成并推送；对应 GitHub issue #2 已关闭。
+- 五个批准的 Alembic revision 保持独立且按依赖排序：`0001_m001`、`0002_m002`、`0003_m003`、`0004_m004`、`0005_m005`。
+- API 仓库 `SHV1-006` 已以独立提交 `f2e2f55` 完成并推送；对应 GitHub issue #3 已关闭。
+- 未实现 `SHV1-007` 的 Repository、Service、业务 API，也未创建 React、审核、发布、DocumentBlock、ContentBlock 或 DocumentAsset 生产代码。
+
+**Verification / 验证**
+
+- 使用 `compose.yaml` 的 PostgreSQL 16 `postgres-test`，并要求 `GONGKAO_APP_ENV=test` 与数据库名以 `_test` 结尾；SQLite 目标会被拒绝。
+- 空数据库按五个 revision 升级到 `0005_m005 (head)` 通过；重复 upgrade 不重复插入五个固定 UUID/code 的申论知识点种子。
+- schema 检查覆盖所有业务表、字段、主键、具名 CHECK、UNIQUE、索引和 18 个外键；所有外键均无级联删除，两个复合 current-version 外键为 `ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED`。
+- 约束实验确认：同一题目的两个版本可保留相同来源顺序；同一 `paper_version` 重复题位被拒绝；一个材料版本可关联两个题目版本；重复材料关联和同题重复关联顺序被拒绝。
+- downgrade 只在双重保护的一次性测试数据库执行，随后重新 upgrade 到 head 并再次核对 schema 与种子。
+- 最终检查：Ruff 通过；MyPy 严格模式检查 22 个源文件通过；Pytest 10 项通过；Alembic current 与 heads 均为 `0005_m005 (head)`。
+
+**Known limitations and next step / 已知限制与下一步**
+
+- 迁移测试要求本地或 CI 可连接 PostgreSQL 16；服务级跨表事务规则尚未实现或验证。
+- 下一项依赖任务为 `SHV1-007`：实现材料/题目草稿创建、乐观锁更新、提交和修订版本创建的领域服务事务；不得在该任务开始前扩展业务 API。
+
+---

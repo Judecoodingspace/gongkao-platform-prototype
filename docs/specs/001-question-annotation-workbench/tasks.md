@@ -40,8 +40,8 @@
 - [x] `SHV1-002` Review and approve gate `G-02`; resolve every open contract question without changing field names in implementation code first.
 - [x] `SHV1-003` Review and approve gate `G-03`; create/reuse a dedicated GitHub issue and record the reviewed migration boundary.
 - [x] `SHV1-004` Scaffold only the approved backend, migration, and test structure; add no frontend persistence yet.
-- [ ] `SHV1-005` Implement migrations `M-001` through `M-005` from `migration-plan.md` with sanitized reference seeds only.
-- [ ] `SHV1-006` Add migration upgrade, schema inspection, idempotent seed, and disposable-database recovery tests.
+- [x] `SHV1-005` Implement migrations `M-001` through `M-005` from `migration-plan.md` with sanitized reference seeds only.
+- [x] `SHV1-006` Add migration upgrade, schema inspection, idempotent seed, and disposable-database recovery tests.
 - [ ] `SHV1-007` Implement domain/service transactions for draft create, optimistic-lock patch, submit, and correction-version creation.
 - [ ] `SHV1-008` Implement the endpoints and errors in `api-contract.md`; do not add review endpoints or mixed-content payloads in this slice.
 - [ ] `SHV1-009` Add all required contract tests, including exact four-field round-trip, source-order conflict, stale update, and immutable submitted version.
@@ -121,8 +121,8 @@ Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` 
 - [x] `SHV1-002` 评审并批准 `G-02`，先解决契约问题，不得先在实现代码中自行改字段名。
 - [x] `SHV1-003` 评审并批准 `G-03`，创建或复用专用 GitHub issue，记录已评审的迁移边界。
 - [x] `SHV1-004` 只搭建已批准的后端、迁移和测试结构，暂不连接前端持久化。
-- [ ] `SHV1-005` 按 `migration-plan.md` 实现 `M-001` 至 `M-005`，只能加入脱敏的受控种子数据。
-- [ ] `SHV1-006` 增加迁移升级、schema 检查、种子幂等和一次性测试数据库恢复测试。
+- [x] `SHV1-005` 按 `migration-plan.md` 实现 `M-001` 至 `M-005`，只能加入脱敏的受控种子数据。
+- [x] `SHV1-006` 增加迁移升级、schema 检查、种子幂等和一次性测试数据库恢复测试。
 - [ ] `SHV1-007` 实现草稿创建、乐观锁更新、提交和新建修订版本的领域服务事务。
 - [ ] `SHV1-008` 实现 `api-contract.md` 中的端点和错误；本切片不得扩展审核端点或图文 payload。
 - [ ] `SHV1-009` 增加全部契约测试，包括四字段原样往返、来源顺序冲突、过期更新和已提交版本不可变。
