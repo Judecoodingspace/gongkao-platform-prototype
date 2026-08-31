@@ -1100,3 +1100,23 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - 下一项为 `SHV1-009`：补全契约级 PostgreSQL 端到端测试；不得在该任务前增加审核或混合内容能力。
 
 ---
+
+### REV-20260831-02: SHV1-009 API contract-test completion / SHV1-009 API 契约测试完成
+
+**Implementation / 实现**
+
+- API 仓库以独立提交 `371316e` 完成 `SHV1-009`；GitHub issue #6 记录本轮开始、验证与完成结论。
+- 新增只使用合成 UUID、标签和文本的 PostgreSQL 16 HTTP 契约测试夹具；每个测试均重建 disposable `public` schema 并从空库升级至 head。
+- 覆盖四字段与来源顺序原样往返、知识点读取/拒绝、稳定游标及跨试卷游标拒绝、共享材料复用、幂等重放与冲突、来源顺序冲突、过期写入、题位冲突原子回滚、提交完整度、已提交不可修改、草稿材料随提交转换、修订历史不变，以及 V1 不接受编辑器 HTML 且不产生选项或审核表。
+
+**Verification / 验证**
+
+- 使用 Compose PostgreSQL 16 `postgres-test`、`GONGKAO_APP_ENV=test` 和 `_test` 数据库名完成验证；Ruff 通过，MyPy 严格模式检查 43 个源文件通过，Pytest 21 项通过，Alembic current 与 heads 均为 `0005_m005 (head)`。
+- 验证后移除 `postgres-test` 容器；未使用 SQLite、真实试卷正文、答案或数据库转储。
+
+**Known limitations and next step / 已知限制与下一步**
+
+- 临时 `X-Actor-Id` 开发/测试身份适配器仍待正式认证与角色映射替换；审核端点、图文内容和发布能力仍不在本切片。
+- 下一项为 `SHV1-010`：完成 G-04，并在 GitHub issue 汇总迁移命令、测试数量、回滚说明和已知限制；在该门禁完成前不得开始正式前端持久化。
+
+---
