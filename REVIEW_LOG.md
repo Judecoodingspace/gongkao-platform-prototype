@@ -1120,3 +1120,27 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - 下一项为 `SHV1-010`：完成 G-04，并在 GitHub issue 汇总迁移命令、测试数量、回滚说明和已知限制；在该门禁完成前不得开始正式前端持久化。
 
 ---
+
+### REV-20260831-03: G-04 backend acceptance / G-04 后端验收
+
+**Decision / 决策**
+
+- `G-04` 于 2026-08-31 通过。申论 V1 后端的五个 PostgreSQL migration、领域事务、HTTP 契约和契约测试已完成；正式前端持久化接线现在具备开始条件。
+- 本门禁不批准审核、图文内容、解析器、发布、物理删除或其他新的后端能力；它们仍按各自后续切片和门禁执行。
+
+**Verification / 验证**
+
+- 使用 Compose PostgreSQL 16 `postgres-test`、`GONGKAO_APP_ENV=test` 和 `_test` 数据库名，执行 `alembic upgrade head`、`alembic current`、`alembic heads`、Ruff、MyPy 严格模式和完整 Pytest。
+- 空库按 `0001_m001` 至 `0005_m005` 升级成功；current 与 heads 均为 `0005_m005 (head)`；MyPy 检查 43 个源文件通过，Pytest 21 项通过。
+- 回滚只在一次性测试数据库执行：`alembic downgrade base` 成功，再次 `alembic upgrade head` 后 current 仍为 `0005_m005 (head)`；验证后移除 `postgres-test` 容器。
+
+**Traceability and limitations / 追溯与限制**
+
+- API 基线与切片提交：`a73f24a`（SHV1-004）、`dcbc2df`（SHV1-005）、`f2e2f55`（SHV1-006）、`91fd09f`（SHV1-007）、`66d94cb`（SHV1-008）、`371316e`（SHV1-009）。相应 GitHub issues #2 至 #7 记录范围与验证；#7 记录本门禁命令、数量、回滚和结论。
+- 临时 `X-Actor-Id` 仅用于开发/测试身份上下文，仍需在后续正式认证设计中替换；审核权限、混合内容、解析器和发布尚未实现。
+
+**Next step / 下一步**
+
+- 可开始 `SHV1-011`：在独立的正式 Web 仓库中实现已批准的 React 持久化接线，并使用纯文本 payload 完成保存、重载与提交；不得绕过人工审核。
+
+---

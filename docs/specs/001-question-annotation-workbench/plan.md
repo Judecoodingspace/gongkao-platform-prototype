@@ -139,7 +139,7 @@ No implementation agent may skip these gates:
 - `G-01 Stack`: stakeholders explicitly select frontend, backend, database, ORM, migration tool, package manager, and supported runtime versions. The current candidate list is not a decision.
 - `G-02 Contract` (`approved 2026-08-28`): four Shenlun fields, reusable versioned source materials, five controlled knowledge points, source-order semantics, API endpoints, immutable-version behavior, idempotency, and optimistic locking are fixed in the contract.
 - `G-03 Migration` (`approved 2026-08-28`): SQL naming, non-cascading FK behavior, deferred current-version ownership FKs, indexes, deterministic seeds, disposable PostgreSQL test database, backup, and rollback policy are fixed in the migration plan.
-- `G-04 Backend acceptance`: migrations and backend contract tests pass before frontend persistence wiring begins.
+- `G-04 Backend acceptance` (`approved 2026-08-31`): migrations and backend contract tests pass before frontend persistence wiring begins.
 - `G-05 End-to-end acceptance`: the production frontend can save, reload, switch, submit, and conflict-test sanitized drafts without bypassing human review.
 
 Terra must execute tasks `SHV1-001` through `SHV1-012` in `tasks.md` in order. It must stop at any unapproved gate, preserve unrelated worktree changes, and record each implementation checkpoint in the relevant GitHub issue with no private paper content.
@@ -277,7 +277,7 @@ tests/
 - `G-01 技术栈`：相关方明确选择前端、后端、数据库、ORM、迁移工具、包管理器和支持的运行时版本；当前候选列表不等于已决策。
 - `G-02 契约`（`2026-08-28 已批准`）：申论四字段、可复用版本化共享材料、五个受控知识点、专项来源顺序、API 端点、版本不可变、幂等和乐观锁规则已固定。
 - `G-03 迁移`（`2026-08-28 已批准`）：SQL 命名、非级联外键、延迟当前版本归属外键、索引、确定性种子、一次性 PostgreSQL 测试库、备份与回滚策略已固定。
-- `G-04 后端验收`：迁移和后端契约测试通过后，才能开始前端持久化接线。
+- `G-04 后端验收`（`2026-08-31 已批准`）：迁移和后端契约测试通过后，才能开始前端持久化接线。
 - `G-05 端到端验收`：正式前端使用脱敏草稿完成保存、重载、切题、提交和并发冲突验证，且不能绕过人工审核。
 
 Terra 必须按 `tasks.md` 中 `SHV1-001` 至 `SHV1-012` 的依赖顺序执行。任一门禁未批准时应停止，不得猜测；必须保留工作区无关修改，并在对应 GitHub issue 记录每个实现检查点，且不得包含私有试卷内容。
