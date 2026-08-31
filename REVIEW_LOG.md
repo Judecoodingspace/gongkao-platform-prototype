@@ -1079,3 +1079,24 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - 下一任务为 `SHV1-008`：在不改变已批准服务语义的前提下，实现 `api-contract.md` 定义的 HTTP 路由和错误翻译；其后才是 `SHV1-009` 的完整契约测试。
 
 ---
+
+### REV-20260831-01: SHV1-008 API contract endpoint completion / SHV1-008 API 契约端点完成
+
+**Implementation / 实现**
+
+- API 仓库以独立提交 `66d94cb` 完成 `SHV1-008`；GitHub issue #5 记录了开始、设计检查、明确决策和验证结论。
+- 已实现申论 V1 的知识点读取、来源材料创建/草稿更新/修订版本、题目草稿创建/列表/当前版本读取/草稿更新/提交/修订版本端点，以及请求/响应模型、LF 行尾规范化、游标分页和 OpenAPI 输出。
+- 已实现统一 JSON 错误响应、4 MiB 请求体限制、字段级长度限制，以及临时必需的 `X-Actor-Id` UUID 开发/测试身份上下文；缺失或非法身份返回 `401 UNAUTHENTICATED`。
+- 已确保草稿修改/提交/修订只允许创建者操作；没有实现审核、驳回、发布、图文内容、解析器入口或物理删除接口。
+
+**Verification / 验证**
+
+- 在一次性 Compose PostgreSQL 16 `postgres-test` 数据库中执行最终检查：Ruff 通过；MyPy 严格模式检查 43 个源文件通过；Pytest 17 项通过；Alembic current 与 heads 均为 `0005_m005 (head)`。
+- 新增 API 边界测试覆盖临时身份缺失、非法 JSON、4 MiB 请求体拒绝，以及已批准的字段长度和 LF 规范化；OpenAPI 已重新生成。
+
+**Known limitations and next step / 已知限制与下一步**
+
+- `X-Actor-Id` 仅是本切片经确认的开发/测试身份适配器，正式认证、角色映射和审核权限仍待后续设计替换。
+- 下一项为 `SHV1-009`：补全契约级 PostgreSQL 端到端测试；不得在该任务前增加审核或混合内容能力。
+
+---
