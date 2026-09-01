@@ -1144,3 +1144,23 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - 可开始 `SHV1-011`：在独立的正式 Web 仓库中实现已批准的 React 持久化接线，并使用纯文本 payload 完成保存、重载与提交；不得绕过人工审核。
 
 ---
+
+### REV-20260901-01: SHV1-011 production frontend wiring / SHV1-011 正式前端持久化接线
+
+**Implementation / 实现**
+
+- 独立 Web 仓库完成 React 19、TypeScript、Vite 和 Ant Design 5 的申论纯文本工作台；请求与响应类型由后端 OpenAPI 生成，保存、重载草稿与提交审核均使用已批准的纯文本契约。
+- 使用官方 `@ant-design/v5-patch-for-react-19` 兼容补丁；已将弃用的 `Input` `addonAfter` 改为 `Space.Compact`。未引入编辑器 HTML/JSON、选项、审核记录或混合内容能力。
+- Playwright 使用合成 UUID、标签和文本拦截 API，并维护截图基线；未提交真实试卷正文、答案、凭证或数据库数据。
+
+**Verification / 验证**
+
+- 在 Windows Node 22.23.2 与 npm 10.9.8 下执行 `npm run lint`、`npm run typecheck`、`npm run build` 和 `npm run test:e2e`，全部通过；截图已人工检查。
+- 构建报告首个 JavaScript chunk 为约 650 kB、超过 Vite 默认 500 kB 提示阈值；这是非阻断的性能优化项，未改变功能验收结论。
+
+**Traceability and next step / 追溯与下一步**
+
+- Web GitHub issue #2 记录开始、Node 环境阻塞解除、兼容性检查和完成结论，并将在相应 Web 与文档提交推送后关闭。
+- `SHV1-011` 已完成；下一项只能是 `SHV1-012 / G-05` 的脱敏端到端验收，不得在 G-05 通过前扩展新的产品能力。
+
+---

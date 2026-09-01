@@ -46,7 +46,7 @@
 - [x] `SHV1-008` Implement the endpoints and errors in `api-contract.md`; do not add review endpoints or mixed-content payloads in this slice.
 - [x] `SHV1-009` Add all required contract tests, including exact four-field round-trip, source-order conflict, stale update, and immutable submitted version.
 - [x] `SHV1-010` Complete gate `G-04`; record migration commands, test counts, rollback notes, and limitations in the GitHub issue.
-- [ ] `SHV1-011` Convert the approved static behavior into the selected production frontend and wire save/reload/submit using plain-text payloads.
+- [x] `SHV1-011` Convert the approved static behavior into the selected production frontend and wire save/reload/submit using plain-text payloads.
 - [ ] `SHV1-012` Complete gate `G-05` with sanitized end-to-end fixtures, interaction tests, screenshot checks, and an issue completion note.
 
 Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` through `SHV1-003` are approved, `SHV1-011` before `SHV1-010`, or mark a task complete without the checks named in that task.
@@ -127,7 +127,7 @@ Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` 
 - [x] `SHV1-008` 实现 `api-contract.md` 中的端点和错误；本切片不得扩展审核端点或图文 payload。
 - [x] `SHV1-009` 增加全部契约测试，包括四字段原样往返、来源顺序冲突、过期更新和已提交版本不可变。
 - [x] `SHV1-010` 完成 `G-04`，在 GitHub issue 记录迁移命令、测试数量、回滚说明和已知限制。
-- [ ] `SHV1-011` 将已确认的静态交互迁移到选定正式前端，并用纯文本 payload 接通保存、重载和提交。
+- [x] `SHV1-011` 将已确认的静态交互迁移到选定正式前端，并用纯文本 payload 接通保存、重载和提交。
 - [ ] `SHV1-012` 用脱敏端到端 fixture、交互测试、截图检查和 issue 完成记录通过 `G-05`。
 
 以上任务按依赖排序。Terra 不得在 `SHV1-001` 至 `SHV1-003` 未批准时开始 `SHV1-004`，不得在 `SHV1-010` 前开始 `SHV1-011`，也不得在未执行任务所列检查时将其标记完成。
