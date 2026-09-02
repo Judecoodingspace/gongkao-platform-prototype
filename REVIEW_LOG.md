@@ -99,6 +99,20 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 
 ---
 
+### REV-20260902-01: G-05 end-to-end acceptance / G-05 端到端验收
+
+**Decision and verification / 决策与验证**
+
+- `G-05` 通过：React 工作台在一次性 PostgreSQL 16 `gongkao_api_test` 与真实 FastAPI 上完成脱敏草稿创建、保存、重载、切题前保存、真实 `STALE_DRAFT` 冲突提示与重新加载；没有路由拦截或审核绕过。
+- Playwright 在 1440×900、1366×768 和 1280×720 生成并复跑截图基线；正常复跑在空 schema 迁移、最小脱敏试卷版本夹具恢复后通过。
+- 临时 `X-Actor-Id` 仍仅用于开发/测试；未实现正式认证、审核、图文内容或发布能力。验收使用后应停止 FastAPI 与 `postgres-test`，不保留测试服务或数据库数据。
+
+**Traceability / 追溯**
+
+- Web issue #3 记录开始、前端工作流修正、真实服务检查和完成结论；SHV1-011 修正提交为 `b0a7069`，G-05 测试与配置在独立 Web 提交中记录。
+
+---
+
 ## Review Records / 评审记录
 
 ### REV-20260803-01: Switch DocumentBlock POC source from Docling to LibreOffice PDF / DocumentBlock POC 数据源从 Docling 切换到 LibreOffice PDF
