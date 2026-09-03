@@ -1,6 +1,6 @@
 # WDV1-003 / G-08 Text-First Source-Structuring Implementation Contract
 
-**状态：NEEDS PRODUCT CLARIFICATION。** 本合同将 G-06、G-07 与已冻结的 G-08 决策收敛为 WDV1-003 的候选实施边界。P1–P3 尚待产品负责人明确；在此之前它不构成 implementation 授权。不得创建 migration、models、parser、依赖、API、OpenAPI、React 或 worker。
+**状态：PENDING PRODUCT APPROVAL。** 本合同将 G-06、G-07 与已冻结的 G-08 决策收敛为 WDV1-003 的候选实施边界。P1–P3 已写回；本合同仍需产品负责人批准才构成 implementation 授权。此前不得创建 migration、models、parser、依赖、API、OpenAPI、React 或 worker。
 
 **权威输入：** [`WDV1_G06_FROZEN_DECISIONS.md`](./WDV1_G06_FROZEN_DECISIONS.md)、[`WDV1_G07_ACCEPTANCE_REPORT.md`](./WDV1_G07_ACCEPTANCE_REPORT.md)、[`WDV1_G08_FROZEN_DECISIONS.md`](./WDV1_G08_FROZEN_DECISIONS.md)。发生冲突时停止并补充评审；不得在代码中自行裁决。
 
@@ -26,9 +26,11 @@ WDV1-003 的唯一目标是：对已经 G-07 `finalized` 的、以纯文字为�
 一次人工处理请求形成一个 immutable processing result，拥有自己的状态、时间、处理器元数据和 `DocumentBlock` 集合。G-08 的 parser name、parser version、parser config、source hash 与 trigger actor 属于该 specific processing result；不得因重新解析修改 `PaperVersion.parser_*`，也不得把该组历史字段当成当前 processing metadata 的权威存储。重新处理绝不覆盖、删除或重写旧结果及其块。
 
 - active selection 是独立的可变选择状态；processing result 本体不可因 active 切换而更新。任一 `PaperVersion` 同时最多一个 active result，切换必须原子完成，且不得修改 processing result 的 blocks、status、parser metadata 或 gap evidence。
-- 首次 `success` 是否自动成为 initial active result，见 P2；在 P2 获批前不得自行决定。
+- 当且仅当该 `PaperVersion` 当前没有 active result 且新的 terminal result 为 `success` 时，该 success 自动成为 initial active result；该 initial-active selection 必须与 terminal success commit 原子完成。
 - 后续 `success` 结果先保持 inactive，只有明确、受控的人工作用才能成为 active。
-- `partial` 或 `failed` 的新结果绝不自动替换已有 success active result。
+- `partial` 默认 inactive，但可由受控操作者明确、可审计且原子地 activation；active partial 读取时必须同时暴露 `status = partial` 与 gap/unsupported evidence，active 不等于 complete。
+- `failed` 永远不得通过普通 activation 成为 active。
+- 已有任意 active（包括人工激活的 partial）时，新的 success 或 partial 都默认 inactive；不得静默替换。
 - 历史结果只读保留；不提供物理删除。
 - 未来任何字段来源关系必须指向具体 processing result 与具体 block，不能依赖 PaperVersion + order number。
 
@@ -62,12 +64,12 @@ processing-result metadata
 + gap / unsupported evidence
 ```
 
-不得存在 `success`/`partial` 但仅持久化部分 blocks，也不得留下 blocks 却没有所属 processing result。数据库提交失败时，不得留下可见半成品 `success`/`partial`，不得改变 existing active selection、`PaperVersion` 或历史 processing results；具体事务机制不在本合同冻结。
+不得存在 `success`/`partial` 但仅持久化部分 blocks，也不得留下 blocks 却没有所属 processing result。数据库提交失败时，不得留下可见半成品 `success`/`partial`，不得改变 existing active selection、`PaperVersion` 或历史 processing results；若触发 automatic initial activation，terminal success commit 与 initial active selection 必须同一一致原子结果。具体事务机制不在本合同冻结。
 
 | 状态 | WDV1-003 最低含义 |
 | --- | --- |
 | `success` | 自然段级文字块与阅读顺序可靠，且在本切片可检测范围内没有未说明缺口。 |
-| `partial` | 已产生的文字块与顺序可靠，但检测到可识别的未结构化/不可靠缺口；结果保留并带类型与可靠范围内的位置。P1 决定其在没有 success 时能否 active。 |
+| `partial` | 已产生的文字块与顺序可靠，但检测到可识别的未结构化/不可靠缺口；结果保留并带类型与可靠范围内的位置。默认 inactive，但可经明确人工 activation 成为 active。 |
 | `failed` | 无法产生足够可靠的文字块，无法确认阅读顺序，存在未知丢失，或无法区分可信与缺失内容；不得成为普通 active result。 |
 
 不得用“处理器未报错”、块数量百分比、confidence score 或 AI risk score 代替上述判断。source-structuring status 与未来 visual-preview status 必须是独立概念。
@@ -110,28 +112,24 @@ processing-result metadata
 - 需要新增业务语义、SourceSpan、填字段、React、RBAC、OCR、PDF upload 或 G-09 才能让本切片“可用”；
 - precheck 无法在脱敏代表样本上证明自然段与顺序稳定。
 
-## 11. PRODUCT CLARIFICATIONS REQUIRED
+## 11. 已批准的 P1–P3 与最小 backend contract
 
-### P1. 第一次结果只有 `partial` 时是否允许成为 active？
+P1 已批准：partial 默认 inactive，但可由受控操作者明确、可审计、原子地设为 active；active partial 必须携带其 partial status 与 gap/unsupported evidence。failed 永远不可 active。后续 success 不自动替换 partial active。
 
-- **Option A：** 允许成为“当前可用但不完整”的 active result；后续必须显著显示 `partial`。
-- **Option B：** `partial` 永远不能 active，必须等待 `success`。
-- **Recommendation：** Option A。它保留 G-06 的“可靠部分仍可继续人工工作”原则，同时以明显状态避免伪装完整；但产品负责人必须明确批准，不能由实现自行选择。
+P2 已批准：当且仅当没有 active result 时，新的 success 自动成为 initial active；该规则与 processing sequence 无关。已有 success 或人工激活的 partial 时，新 success 默认 inactive。
 
-### P2. 首次 `success` 是否自动成为 initial active？
+P3 已批准：WDV1-003 必须交付最小、正式、可集成测试且可供后续客户端消费的 backend contract。具体 URL、HTTP method、payload、pagination 与服务类名仍由后续最小 API contract 冻结；本合同只要求以下能力：
 
-- **Option A：** 首次 `success` 自动成为 initial active。
-- **Option B：** 即使首次 `success` 也必须显式 activation。
-- **Recommendation：** Option A。首个可靠结果没有现存选择可覆盖，自动设为 initial active 可形成确定、可测试的默认行为；仍须产品负责人明确批准。
+1. **Trigger processing**：受控地明确触发 finalized `PaperVersion` 的一次新处理，并遵循 source hash re-verification、processing-intent idempotency 与独立历史。
+2. **Read processing result**：读取指定 result 的 identity、PaperVersion、status、parser metadata、timestamps/audit metadata、gap evidence 及相关 active 信息；不得泄露私有 storage URI、filesystem path、raw DOCX 或不必要真实来源正文。
+3. **Read ordered text blocks**：按稳定 `source_order` 读取指定 result 的 text blocks；不得附加任何业务语义。
+4. **Read active result**：读取一个 PaperVersion 的 current active result；若其为 partial，必须同时返回 partial status 与 gap/unsupported evidence。
+5. **Activate result**：明确、受控地切换 active result；同一 PaperVersion 最多一个 active，切换原子，且不得修改 processing history、blocks、parser metadata 或 gap evidence。success 和 partial 可显式激活，failed 不可激活。
 
-### P3. WDV1-003 是否必须交付最小 backend contract？
-
-- **Option A：** WDV1-003 只实现 persistence/service/parser foundation，最小 HTTP API 留给 WDV1-004。
-- **Option B：** WDV1-003 同时提供最小 backend contract，足以人工触发 processing、读取 result/ordered text blocks/active result，以及显式 active switch。
-- **Recommendation：** Option B。处理、历史与 active 的人工作用需要可验证的受控入口；最小 contract 可保持非 UI、非预览、非 G-09 的范围。但产品负责人必须明确批准，且后续合同才可冻结 URL/payload。
+除创建新的 processing result 与独立 active selection 外，既有 processing result 本体只读。不得提供 PATCH block text、PATCH processing status、PATCH parser output 或 PATCH gap evidence；发现错误的正确动作是创建新的 processing result。
 
 ## 12. 拟议 issue 与批准后的实施顺序
 
 获批后，在 API 仓库创建独立 `WDV1-003 / G-08 text-first source structuring` GitHub issue，只记录范围、开始、汇总 precheck、阻塞、验证、已知限制与完成结论，不含私有内容。顺序为：precheck → 经批准的最小 schema/API contract 补充（如确有需要）→ additive migration/处理边界 → PostgreSQL 16 tests → 验收记录。
 
-在 P1–P3 与本合同获得产品负责人明确批准前，以上顺序不得开始。
+在本合同获得产品负责人明确批准前，以上顺序不得开始。
