@@ -1,8 +1,8 @@
 # WDV1-003 / G-08 Text-First Source-Structuring Implementation Contract
 
-**状态：PENDING PRODUCT APPROVAL。** 本合同将 G-06、G-07 与已冻结的 G-08 决策收敛为 WDV1-003 的候选实施边界。P1–P3 已写回；本合同仍需产品负责人批准才构成 implementation 授权。此前不得创建 migration、models、parser、依赖、API、OpenAPI、React 或 worker。
+**状态：APPROVED（实施授权）。** 本合同将 G-06、G-07 与已冻结的 G-08 决策收敛为 WDV1-003 的实施边界。产品负责人已批准 D1–D6 与 P1–P3，并授权进入 WDV1-003 implementation；这不表示 WDV1-003 已完成，也不表示 G-08 已通过。
 
-**权威输入：** [`WDV1_G06_FROZEN_DECISIONS.md`](./WDV1_G06_FROZEN_DECISIONS.md)、[`WDV1_G07_ACCEPTANCE_REPORT.md`](./WDV1_G07_ACCEPTANCE_REPORT.md)、[`WDV1_G08_FROZEN_DECISIONS.md`](./WDV1_G08_FROZEN_DECISIONS.md)。发生冲突时停止并补充评审；不得在代码中自行裁决。
+**权威输入：** [`WDV1_G06_FROZEN_DECISIONS.md`](./WDV1_G06_FROZEN_DECISIONS.md)、[`WDV1_G07_ACCEPTANCE_REPORT.md`](./WDV1_G07_ACCEPTANCE_REPORT.md)、[`WDV1_G08_FROZEN_DECISIONS.md`](./WDV1_G08_FROZEN_DECISIONS.md) 与 [`WDV1_G08_TECHNICAL_CHOICES.md`](./WDV1_G08_TECHNICAL_CHOICES.md)。发生冲突时停止并补充评审；不得在代码中自行裁决。
 
 ## 1. 目标与非目标
 
