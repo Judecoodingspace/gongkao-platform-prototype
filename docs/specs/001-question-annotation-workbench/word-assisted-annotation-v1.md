@@ -25,14 +25,14 @@ The authoritative approved decisions are in [`WDV1_G06_FROZEN_DECISIONS.md`](./W
 ## Proposed delivery gates
 
 - **G-06 Word design**: passed; Decisions 1–8 are frozen in the authoritative decision document.
-- **G-07 Raw DOCX acceptance**: verify safe, immutable, traceable DOCX intake only; it does not verify blocks or field fill.
+- **G-07 Raw DOCX acceptance**: passed; safe, immutable, traceable DOCX intake is verified in `WDV1_G07_ACCEPTANCE_REPORT.md`. It does not verify blocks or field fill.
 - **G-08 Source structuring acceptance**: verify faithful visual preview, structural source blocks, available provenance, and partial-failure behavior; it does not verify semantic inference or field fill.
 - **G-09 Human-assisted annotation acceptance**: verify explicit multi-block fill, field-to-block provenance, save/switch/conflict/reload/submit, and manual continuation when assistance is partial.
 
 ## Execution runbook
 
 1. `WDV1-001`: approve G-06; completed by the frozen decision baseline.
-2. `WDV1-002`: design and implement only approved raw-DOCX intake/version-finalization work for G-07; do not recreate `papers` or `paper_versions`.
+2. `WDV1-002`: completed approved raw-DOCX intake/version-finalization work for G-07; do not recreate `papers` or `paper_versions`.
 3. `WDV1-003`: design and implement reviewed source-block/provenance migrations and structural parsing for G-08.
 4. `WDV1-004`: implement faithful visual preview and source-structuring/partial-failure behavior for G-08.
 5. `WDV1-005`: implement explicit multi-block field fill and field-to-block provenance for G-09.

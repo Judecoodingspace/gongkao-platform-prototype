@@ -18,7 +18,7 @@ V1 does not accept images, editor-specific HTML/JSON, parser-generated questions
 ## 2. Common Rules
 
 - Base path: `/api/v1`.
-- Media type: `application/json; charset=utf-8`.
+- Media type: `application/json; charset=utf-8`, except the approved G-07 raw-DOCX intake endpoints, which use `multipart/form-data`.
 - IDs are server-generated opaque UUIDs represented as strings.
 - Timestamps use ISO 8601 UTC.
 - Text preserves meaningful paragraph breaks as `\n`; line endings are normalized to LF at the API boundary.
@@ -30,6 +30,18 @@ V1 does not accept images, editor-specific HTML/JSON, parser-generated questions
 - A parser or AI may propose data only through a future candidate endpoint. It cannot call these endpoints to create an approved or submitted record without a human action.
 - Annotators may create, edit, and submit their own drafts. Rejected content is corrected by creating a new version, not by reopening the rejected row. Reviewer/admin permissions are outside this persistence slice.
 - Request bodies are limited to 4 MiB. Normalized limits are: `stem_text` and `reference_answer_text` 200,000 Unicode code points each; `requirement_text` and `question_text` 20,000 each; source labels 500; `change_reason` 1,000. The database uses `text`; the API rejects larger values with `413 REQUEST_TOO_LARGE` or `422 VALIDATION_ERROR`.
+
+### 2.1 G-07 Raw DOCX Intake
+
+The following endpoints are the only exception to the JSON media type. They implement approved raw-DOCX intake only; they do not parse, preview, download, create source blocks, fill question fields, or create formal RBAC.
+
+- `POST /api/v1/papers` accepts multipart fields `client_request_id`, `title`, `subject`, `exam_type`, optional `province` / `year`, and one `document` file. It creates a `Paper` and version `1` of its immutable `PaperVersion`.
+- `POST /api/v1/papers/{paper_id}/versions` accepts `client_request_id` and one `document` file. It creates the next immutable source version for the specified paper.
+- Both successful responses return `paper_id`, `paper_version_id`, `version_number`, `title`, `file_name`, `file_type` (`docx`), `file_hash`, `upload_status` (`finalized`), and `created_at`. They never return `storage_uri`, an absolute storage path, file bytes, or a download URL.
+- A repeated identical request with the same idempotency key returns the original result with `Idempotent-Replay: true`. A changed request using that key returns `409 IDEMPOTENCY_CONFLICT`.
+- A same-hash upload using a new key for the same `Paper` returns the existing version with `200 OK`; it never creates a meaningless new version. Hashes do not merge different papers.
+- DOCX validation obeys the approved G-07 contract, including local OOXML relationship inspection. Ordinary external hyperlinks are stored but never followed; non-hyperlink external relationships and active content are rejected. `X-Actor-Id` remains a development/test actor identity for audit only, not login or RBAC.
+- G-07 `IMPLEMENTATION_PRECHECK` recorded aggregate ZIP metadata for three local, Git-ignored representative DOCX POC samples without reading or outputting their content: maximum source size `594257` bytes, expanded size `690465` bytes, `16` entries, and `10.11:1` maximum entry ratio. The implemented runtime limits are `50 MiB` source bytes, `250 MiB` expanded bytes, `10000` entries, and `100:1` per-entry ratio. These are implementation safety controls with documented headroom, not a new product decision.
 
 ## 3. Controlled Values
 
@@ -275,6 +287,8 @@ Maximum text lengths must be decided from sanitized fixtures before migration im
 | 409 | `IDEMPOTENCY_CONFLICT` | request ID reused with a different payload |
 | 409 | `MATERIAL_VERSION_IMMUTABLE` | attempted mutation of a locked material version |
 | 409 | `MATERIAL_LINK_CONFLICT` | linked material is rejected, non-current, or belongs to another paper version |
+| 404 | `PAPER_NOT_FOUND` | target paper missing during raw-DOCX version upload |
+| 503 | `SOURCE_STORAGE_UNAVAILABLE` | private source storage or finalization transaction could not complete safely |
 | 422 | `VALIDATION_ERROR` | field/domain validation failed |
 | 413 | `REQUEST_TOO_LARGE` | body exceeds the approved request limit |
 

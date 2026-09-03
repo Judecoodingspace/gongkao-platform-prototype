@@ -142,7 +142,7 @@ No implementation agent may skip these gates:
 - `G-04 Backend acceptance` (`approved 2026-08-31`): migrations and backend contract tests pass before frontend persistence wiring begins.
 - `G-05 End-to-end acceptance`: the production frontend can save, reload, switch, submit, and conflict-test sanitized drafts without bypassing human review.
 - `G-06 Word design` (`approved 2026-09-03`): the eight frozen product decisions in `WDV1_G06_FROZEN_DECISIONS.md` define raw DOCX retention, safety, structural-only parsing, explicit multi-block fill, field-to-block provenance, processing outcomes, controlled pilot access, and human-workflow evidence.
-- `G-07 Raw DOCX acceptance`: safe, immutable, traceable original DOCX intake passes; it does not validate source blocks or field fill.
+- `G-07 Raw DOCX acceptance` (`passed 2026-09-03`): safe, immutable, traceable original DOCX intake passes; it does not validate source blocks or field fill. See `WDV1_G07_ACCEPTANCE_REPORT.md`.
 - `G-08 Source structuring acceptance`: faithful visual preview, ordered structural source blocks and partial-failure behavior pass; parser output contains no business-semantic inference.
 - `G-09 Human-assisted annotation acceptance`: explicit multi-block fill, field-to-block provenance, save/switch/return/stale-reload/submit, and manual fallback pass on sanitized DOCX fixtures.
 
@@ -284,7 +284,7 @@ tests/
 - `G-04 后端验收`（`2026-08-31 已批准`）：迁移和后端契约测试通过后，才能开始前端持久化接线。
 - `G-05 端到端验收`：正式前端使用脱敏草稿完成保存、重载、切题、提交和并发冲突验证，且不能绕过人工审核。
 - `G-06 Word 设计`（`2026-09-03 已批准`）：`WDV1_G06_FROZEN_DECISIONS.md` 中八项冻结产品决策定义原始 DOCX 保留、安全、仅来源结构化、明确多块填入、字段到块来源关系、处理结果、受控试点访问和人工工作流证据。
-- `G-07 原始 DOCX 验收`：安全、不可变、可追溯的原始 DOCX 进入系统通过；不验证来源块或字段填入。
+- `G-07 原始 DOCX 验收`（`2026-09-03 已通过`）：安全、不可变、可追溯的原始 DOCX 进入系统通过；不验证来源块或字段填入。见 `WDV1_G07_ACCEPTANCE_REPORT.md`。
 - `G-08 来源结构化验收`：忠实视觉预览、有序结构化来源块和部分失败行为通过；解析结果不包含业务语义推断。
 - `G-09 人工辅助录题验收`：明确多块填入、字段到块来源关系、保存/切题/返回/过期重载/提交及人工兜底在脱敏 DOCX fixture 上通过。
 

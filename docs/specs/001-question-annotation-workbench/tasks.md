@@ -54,7 +54,7 @@ Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` 
 ### Phase 3: Document Import
 
 - [x] `WDV1-001` Approve `G-06` Word design; see `WDV1_G06_FROZEN_DECISIONS.md`.
-- [ ] `WDV1-002` Implement G-07 raw DOCX intake/version finalization; do not recreate existing `papers` or `paper_versions`.
+- [x] `WDV1-002` Implement G-07 raw DOCX intake/version finalization; do not recreate existing `papers` or `paper_versions`; see `WDV1_G07_ACCEPTANCE_REPORT.md`.
 - [ ] `WDV1-003` Implement G-08 source-block/provenance migrations and structural parsing without business-semantic inference.
 - [ ] `WDV1-004` Implement G-08 visual preview and explicit partial-structuring failure behavior.
 - [ ] `WDV1-005` Implement G-09 explicit multi-block field fill and field-to-block provenance.
@@ -135,7 +135,7 @@ Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` 
 ### 阶段 3：文档导入
 
 - [x] `WDV1-001` 批准 `G-06` Word 设计；见 `WDV1_G06_FROZEN_DECISIONS.md`。
-- [ ] `WDV1-002` 实现 G-07 原始 DOCX 进入系统和来源版本定稿；不得重建已有 `papers` 或 `paper_versions`。
+- [x] `WDV1-002` 实现 G-07 原始 DOCX 进入系统和来源版本定稿；不得重建已有 `papers` 或 `paper_versions`；见 `WDV1_G07_ACCEPTANCE_REPORT.md`。
 - [ ] `WDV1-003` 实现 G-08 文档块/来源关系迁移和无业务语义推断的来源结构化。
 - [ ] `WDV1-004` 实现 G-08 视觉预览和明确的部分结构化失败行为。
 - [ ] `WDV1-005` 实现 G-09 明确多块填入和字段到块来源关系。

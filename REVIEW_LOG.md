@@ -1201,3 +1201,11 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - Gate 顺序修正为 G-07 原始 DOCX、G-08 来源结构化、G-09 人工辅助录题；PDF/OCR、图文正式题目、自动拆题、正式 RBAC、审核和发布仍未批准。
 
 ---
+
+### REV-20260903-03: G-07 raw DOCX acceptance / G-07 原始 DOCX 验收
+
+- API commit `9f26c0b` implements only safe raw DOCX reception, private local storage adaptation, SHA-256, immutable `Paper` / `PaperVersion` finalization, idempotency, and safe failure handling; no new migration was required.
+- PostgreSQL 16 disposable-database verification passed with 30 tests. The checked scenarios include safe/changed/repeated DOCX, ordinary hyperlinks, dangerous OOXML relationships and active content, ZIP limits, storage failure, database failure, bytes/hash equality, and response/audit secrecy.
+- `WDV1_G07_ACCEPTANCE_REPORT.md` records the aggregate-only implementation precheck, applied safety controls, commands, limitations, issue #8, and G-07 pass evidence. G-08/G-09 remain unimplemented and require separate approval.
+
+---
