@@ -32,6 +32,7 @@
 - [x] G-07: a safe `.docx` is stored as an immutable paper version with hash, storage reference, upload outcome, and controlled access; parsing does not delete or replace it. See `WDV1_G07_ACCEPTANCE_REPORT.md`.
 - [ ] G-08: the stored DOCX has a faithful visual preview when available and ordered structural source blocks for text, images, and other reliable content; no block is assigned a business meaning by the parser.
 - [ ] G-08: preview failure, source-structuring failure, and partial structuring are visibly distinct; manual annotation remains possible when assistance is unavailable.
+- [ ] WDV1-003: natural-paragraph ordered text blocks, independent processing history, and source-structuring `success`/`partial`/`failed` semantics pass without claiming the full G-08 visual/image scope.
 - [ ] G-09: an annotator explicitly selects one or more source blocks and fills a chosen Shenlun field in original order; non-empty human content cannot be silently overwritten.
 - [ ] G-09: each field can retain ordered links to multiple source blocks even after human text editing; page/position is recorded only when reliable.
 - [ ] G-09: save, switch, return, stale-draft reload, submit, and source inspection work together on sanitized DOCX fixtures.

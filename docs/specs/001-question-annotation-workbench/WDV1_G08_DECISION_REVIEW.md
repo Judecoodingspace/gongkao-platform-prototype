@@ -1,6 +1,6 @@
 # WDV1 G-08 Decision Review
 
-**状态：待产品负责人逐项决定；非实施授权。** 本文只完成 `WDV1-003 / G-08` 的决策审查。它不批准迁移、解析器、LibreOffice、PyMuPDF、预览、API、React 或 `G-09` 实施。
+**状态：历史审查快照；Decision 1–6 已批准。** 本文记录 `WDV1-003 / G-08` 决策审查时的备选方案与推荐理由。最终权威输入是 [`WDV1_G08_FROZEN_DECISIONS.md`](./WDV1_G08_FROZEN_DECISIONS.md)。两份文档均不批准迁移、解析器、LibreOffice、PyMuPDF、预览、API、React 或 `G-09` 实施。
 
 **审查基线：** API `main` 的 G-07 接收实现 `9f26c0b` 与阶段治理同步 `8fbe0a6`；平台 `main` 的 G-07 验收记录 `03ac1cd`。原始 DOCX 接收已通过 G-07；G-08 只讨论如何在不改变原件的前提下，形成诚实的来源结构与预览证据。
 
@@ -221,9 +221,8 @@
 
 解锁 WDV1-003 对 success / partial / failed 的最小产品含义和验收场景；不会解锁 UI、自动重试或复杂置信度系统。
 
-# G-08 设计状态
+# G-08 设计状态（历史快照）
 
-- 本文仅完成六项决策的评审材料，未替产品负责人批准任何一项。
-- `G-08 DESIGN = BLOCKED`，直到 Decision 1–6 都有明确产品负责人批准记录。
-- 在此前，不得创建 `DocumentBlock` 或 processing-history migration，不得接入 LibreOffice/PyMuPDF，不得实现来源结构化、视觉预览、React、来源块选择或 G-09。
-- 所有六项获批后，下一项才是 STEP 3：拟定状态为 `PENDING APPROVAL` 的 WDV1-003 Implementation Contract；本轮到此停止。
+- 本文完成时，Decision 1–6 尚待产品负责人批准。
+- 该历史状态现已由 [`WDV1_G08_FROZEN_DECISIONS.md`](./WDV1_G08_FROZEN_DECISIONS.md) 取代：`G-08 DESIGN DECISIONS = APPROVED`。
+- 此变更不等于 `G-08 = PASS`，也不授权 G-08 implementation。下一步仅可拟定状态为 `PENDING PRODUCT APPROVAL` 的 WDV1-003 Implementation Contract。

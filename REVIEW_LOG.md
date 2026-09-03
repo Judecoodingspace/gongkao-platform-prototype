@@ -1209,3 +1209,17 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - `WDV1_G07_ACCEPTANCE_REPORT.md` records the aggregate-only implementation precheck, applied safety controls, commands, limitations, issue #8, and G-07 pass evidence. G-08/G-09 remain unimplemented and require separate approval.
 
 ---
+
+### REV-20260903-04: G-08 source-structuring design decisions / G-08 来源结构化设计决策
+
+**Decision / 决策**
+
+- 产品负责人已批准并冻结 G-08 的六项产品语义，权威文件为 `WDV1_G08_FROZEN_DECISIONS.md`：视觉阅读层与来源结构层互补；自然段级自然结构块；独立处理历史与 explicit active result；WDV1-003 的申论 text-first 分片；直接 DOCX/OOXML 的文字结构化主路线；以及 `success`、`partial`、`failed` 三态。
+- `G-08 DESIGN DECISIONS = APPROVED`，但 `G-08 = NOT PASSED`。该冻结只解锁 STEP 3 的 WDV1-003 Implementation Contract 拟定；不授权 migration、parser、LibreOffice/PyMuPDF、API、React 或 G-09 implementation。
+
+**Consistency / 一致性**
+
+- `tasks.md` 已把 WDV1-003 明确为 text-first 基础，把视觉预览、visual/source linking、image/other evidence 与完整部分失败体验保留给 WDV1-004。
+- `data-model.md` 仅同步处理历史和块归属产品语义，未创建或批准任何 schema。
+
+---

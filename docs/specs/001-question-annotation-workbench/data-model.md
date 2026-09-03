@@ -43,7 +43,7 @@ Fields:
 
 #### DocumentBlock
 
-Represents a parsed or manually defined source block.
+Represents a parsed or manually defined source block. For Word V1, a parsed block belongs to one specific processing result of one immutable `PaperVersion`; it must not be identified only by `PaperVersion` plus an order number, because later reprocessing creates a separate block set.
 
 Fields:
 
@@ -66,7 +66,7 @@ Possible `block_type`:
 - `image`
 - `unknown`
 
-Word V1 `DocumentBlock` values describe reliable source structure only. They must not encode inferred business roles such as question, answer, requirement, material, option, knowledge point, or question type. Original printed labels may be retained as source text, not parser conclusions. A later migration must retain original reading order and any reliable page/bounding-box information without manufacturing unavailable coordinates.
+Word V1 `DocumentBlock` values describe reliable source structure only. They must not encode inferred business roles such as question, answer, requirement, material, option, knowledge point, or question type. Original printed labels may be retained as source text, not parser conclusions. Text-first WDV1-003 targets natural-paragraph blocks; the model is not permanently text-only, and later G-08 work may add image, table, or other reliable source evidence. A later migration must retain original reading order and any reliable page/bounding-box information without manufacturing unavailable coordinates. Processing-result history, active-result selection, and `success`/`partial`/`failed` semantics require an approved implementation contract before schema design.
 
 #### SourceMaterial
 
@@ -517,7 +517,7 @@ Likely search indexes:
 
 #### DocumentBlock，文档块
 
-表示解析得到或人工定义的来源块。
+表示解析得到或人工定义的来源块。Word V1 中，解析块属于某个不可变 `PaperVersion` 的某一次具体处理结果；不能只用 `PaperVersion` 加顺序号识别，因为重新处理会生成独立的块集合。
 
 字段：
 
@@ -540,7 +540,7 @@ Likely search indexes:
 - `image`，图片
 - `unknown`，未知
 
-Word V1 的 `DocumentBlock` 只表达可靠来源结构，不能编码题目、答案、作答要求、材料、选项、知识点或题型等推断出的业务角色。原始文件中印出的标题或标签可以作为来源文字保留，但不是解析器结论。后续迁移必须保存原始阅读顺序和可靠的页码/坐标，不能制造不存在的坐标。
+Word V1 的 `DocumentBlock` 只表达可靠来源结构，不能编码题目、答案、作答要求、材料、选项、知识点或题型等推断出的业务角色。原始文件中印出的标题或标签可以作为来源文字保留，但不是解析器结论。text-first 的 WDV1-003 以自然段级文字块为目标；模型长期并非永久 text-only，后续 G-08 工作可增加图片、表格或其他可靠来源证据。后续迁移必须保存原始阅读顺序和可靠的页码/坐标，不能制造不存在的坐标。处理结果历史、active result 选择及 `success`/`partial`/`failed` 语义必须先由已批准的实施合同转化为 schema，不能在本说明中自行定表。
 
 #### SourceMaterial，共享来源材料
 
