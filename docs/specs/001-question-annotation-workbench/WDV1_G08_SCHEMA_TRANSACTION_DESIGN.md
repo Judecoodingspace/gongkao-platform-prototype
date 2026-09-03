@@ -1,6 +1,6 @@
 # WDV1-003 / G-08 Schema + Transaction Design
 
-**STATUS = PENDING FINAL APPROVAL.** This is a schema and transaction design for the already-approved WDV1-003 contract. It neither creates nor approves a migration, ORM model, parser, API, worker, storage-read implementation, or PostgreSQL change. `WDV1-003 IMPLEMENTATION = NOT STARTED` and `G-08 = IN PROGRESS` remain unchanged.
+**STATUS = APPROVED（migration + ORM implementation 授权）。** This schema and transaction design is approved for the strictly limited WDV1-003 Alembic migration, SQLAlchemy ORM mapping, and PostgreSQL 16 schema/integrity-test phase. It does not mean WDV1-003 is complete, and it does not authorize a parser, storage reader, processing service, worker, API, OpenAPI, React, or G-08 completion.
 
 **Authority read for this design:** platform `main@12b55c0e539f67adbd919d349a1bbc2412b048b8`, especially the frozen G-06/G-08 decisions, approved WDV1-003 contract, T1 technical choice, and technical precheck. The API comparison baseline is `main@8fbe0a6fa9a2ed96993a220ed6d65526cd703b66`.
 
@@ -71,7 +71,7 @@ For WDV1-003, `block_type` is constrained to `text`; non-text structures are gap
 | Classification | Fields | Reason |
 | --- | --- | --- |
 | MUST HAVE | `paper_version_id`, `processing_result_id`, `selected_at`, `selected_by` | One pointer per source version, its selected target, and minimum auditable selection metadata. |
-| MUST HAVE | `paper_version_id` as primary key; unique `processing_result_id`; composite FK `(paper_version_id, processing_result_id)` to `SourceProcessingResult(paper_version_id, id)` | Ensures at most one active selection and prevents cross-paper targets through a PostgreSQL-enforced same-source relationship. |
+| MUST HAVE | `paper_version_id` as primary key; composite FK `(paper_version_id, processing_result_id)` to `SourceProcessingResult(paper_version_id, id)` | Ensures at most one active selection and prevents cross-paper targets through a PostgreSQL-enforced same-source relationship. |
 | DO NOT STORE | `active` boolean, copied result status, copied parser metadata, copied gaps, history snapshots | A row's presence is the active state; all copied fields would drift from immutable result truth. Selection change history belongs in append-only audit events. |
 
 ## 3. Gap-model decision
@@ -149,7 +149,7 @@ The future minimal API contract must choose the actual accepted/in-progress resp
 - `SourceProcessingResult` has PK `(id)` and candidate key `UNIQUE (paper_version_id, id)`; `PaperVersion → SourceProcessingResult`, `SourceProcessingResult → DocumentBlock`, `SourceProcessingResult → SourceProcessingGap`, and selection references all use `ON DELETE RESTRICT`.
 - Result status check: only `success`, `partial`, `failed`; lifecycle consistency check between `execution_state`, `result_status`, and `completed_at`.
 - `DocumentBlock` and `SourceProcessingGap` order values are positive; block `source_order` is unique within a result.
-- `PaperVersionActiveProcessing.paper_version_id` is its PK; its composite FK `(paper_version_id, processing_result_id)` references `SourceProcessingResult(paper_version_id, id)`. This rejects a cross-PaperVersion active target; a unique target prevents one result from being selected twice.
+- `PaperVersionActiveProcessing.paper_version_id` is its PK; its composite FK `(paper_version_id, processing_result_id)` references `SourceProcessingResult(paper_version_id, id)`. This rejects a cross-PaperVersion active target and enforces at most one selection row per PaperVersion without an unnecessary `UNIQUE(processing_result_id)`.
 - Existing `idempotency_keys` uniqueness and request-hash checks continue to protect retry identity; its response cache must use the reservation compatibility strategy above.
 
 ### Service / transaction-enforced
@@ -245,7 +245,7 @@ Implementation risks to resolve through tests, without changing frozen semantics
 ## 14. Review gate
 
 ```text
-SCHEMA + TRANSACTION DESIGN = READY FOR APPROVAL
+SCHEMA + TRANSACTION DESIGN = APPROVED
 
 IMPLEMENTATION CODE
 = NOT STARTED
