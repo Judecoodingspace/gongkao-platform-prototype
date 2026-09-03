@@ -1186,3 +1186,18 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - 新增 `word-assisted-annotation-v1.md`，定义 G-06/G-07/G-08、WDV1-001 至 WDV1-006、范围边界与完成证据；GitHub issue #6 记录本次规划。
 
 ---
+
+### REV-20260903-02: G-06 Word design approval / G-06 Word 设计批准
+
+**Decision / 决策**
+
+- 产品负责人已冻结 Word V1 的八项决策：原始 DOCX 长期私有保留、只接收安全 `.docx`、仅来源结构化、人工多块明确填入、字段到多来源块追溯、上传/预览/结构化失败分离、受控内部试点及以人工工作流为成功证据。
+- `G-06` 于 2026-09-03 通过。唯一权威基线是 `WDV1_G06_FROZEN_DECISIONS.md`；它不选择云厂商或解析器库，也不批准任何生产实现。
+
+**Consistency findings / 一致性结论**
+
+- 既有 `papers` / `paper_versions` 和不可变版本规则继续有效；Word V1 不重建它们。
+- 原 `DocumentBlock` 的业务语义候选类型与“无语义推断”决定冲突，已改为纯来源结构类型；`SourceSpan` 已明确为字段到多个有序块的人工确认来源关系，而非逐字映射。
+- Gate 顺序修正为 G-07 原始 DOCX、G-08 来源结构化、G-09 人工辅助录题；PDF/OCR、图文正式题目、自动拆题、正式 RBAC、审核和发布仍未批准。
+
+---

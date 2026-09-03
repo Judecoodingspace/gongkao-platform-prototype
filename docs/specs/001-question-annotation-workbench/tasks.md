@@ -53,12 +53,12 @@ Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` 
 
 ### Phase 3: Document Import
 
-- [ ] `WDV1-001` Approve `G-06` Word design: storage, parser boundary, provenance schema/API, security limits, and fixture policy.
-- [ ] `WDV1-002` Add approved document-block/source-span migrations; do not recreate existing `papers` or `paper_versions`.
-- [ ] `WDV1-003` Implement safe DOCX upload and source-version finalization.
-- [ ] `WDV1-004` Implement deterministic text-only DOCX parser candidates behind an adapter.
-- [ ] `WDV1-005` Implement source preview, explicit field fill, and provenance APIs.
-- [ ] `WDV1-006` Complete `G-07`/`G-08` backend and browser acceptance with sanitized fixtures.
+- [x] `WDV1-001` Approve `G-06` Word design; see `WDV1_G06_FROZEN_DECISIONS.md`.
+- [ ] `WDV1-002` Implement G-07 raw DOCX intake/version finalization; do not recreate existing `papers` or `paper_versions`.
+- [ ] `WDV1-003` Implement G-08 source-block/provenance migrations and structural parsing without business-semantic inference.
+- [ ] `WDV1-004` Implement G-08 visual preview and explicit partial-structuring failure behavior.
+- [ ] `WDV1-005` Implement G-09 explicit multi-block field fill and field-to-block provenance.
+- [ ] `WDV1-006` Complete G-09 browser acceptance with sanitized DOCX fixtures.
 
 ### Phase 4: Annotation Workbench
 
@@ -134,12 +134,12 @@ Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` 
 
 ### 阶段 3：文档导入
 
-- [ ] `WDV1-001` 批准 `G-06` Word 设计：存储、解析器边界、来源 schema/API、安全限制和 fixture 策略。
-- [ ] `WDV1-002` 增加已批准的文档块/来源片段迁移；不得重建已有 `papers` 或 `paper_versions`。
-- [ ] `WDV1-003` 实现安全 DOCX 上传和来源版本定稿。
-- [ ] `WDV1-004` 通过适配器实现确定性的纯文本 DOCX 候选解析。
-- [ ] `WDV1-005` 实现来源预览、明确字段填入和来源追溯 API。
-- [ ] `WDV1-006` 用脱敏 fixture 完成 `G-07`/`G-08` 后端与浏览器验收。
+- [x] `WDV1-001` 批准 `G-06` Word 设计；见 `WDV1_G06_FROZEN_DECISIONS.md`。
+- [ ] `WDV1-002` 实现 G-07 原始 DOCX 进入系统和来源版本定稿；不得重建已有 `papers` 或 `paper_versions`。
+- [ ] `WDV1-003` 实现 G-08 文档块/来源关系迁移和无业务语义推断的来源结构化。
+- [ ] `WDV1-004` 实现 G-08 视觉预览和明确的部分结构化失败行为。
+- [ ] `WDV1-005` 实现 G-09 明确多块填入和字段到块来源关系。
+- [ ] `WDV1-006` 用脱敏 DOCX fixture 完成 G-09 浏览器验收。
 
 ### 阶段 4：拆题工作台
 

@@ -27,13 +27,15 @@
 
 ### Functional Acceptance
 
-### Word-Assisted Annotation V1 (requires G-06)
+### Word-Assisted Annotation V1 (G-06 approved)
 
-- [ ] A DOCX upload is stored as an immutable paper version with hash and upload outcome.
-- [ ] Parser candidates are ordered, text-only, provenance-bearing suggestions and never automatically create or submit a question.
-- [ ] An annotator can explicitly fill a Shenlun field from selected source text, inspect its source reference, save, switch, return, and submit.
-- [ ] Parser failure preserves the original upload and leaves manual draft entry available.
-- [ ] Upload, parser, API, migration, and browser fixtures are sanitized; real paper text is not committed.
+- [ ] G-07: a safe `.docx` is stored as an immutable paper version with hash, storage reference, upload outcome, and controlled access; parsing does not delete or replace it.
+- [ ] G-08: the stored DOCX has a faithful visual preview when available and ordered structural source blocks for text, images, and other reliable content; no block is assigned a business meaning by the parser.
+- [ ] G-08: preview failure, source-structuring failure, and partial structuring are visibly distinct; manual annotation remains possible when assistance is unavailable.
+- [ ] G-09: an annotator explicitly selects one or more source blocks and fills a chosen Shenlun field in original order; non-empty human content cannot be silently overwritten.
+- [ ] G-09: each field can retain ordered links to multiple source blocks even after human text editing; page/position is recorded only when reliable.
+- [ ] G-09: save, switch, return, stale-draft reload, submit, and source inspection work together on sanitized DOCX fixtures.
+- [ ] Upload, parser, API, migration, and browser fixtures are sanitized; real paper text, answers, uploads, and private parser output are not committed.
 
 - [ ] A source paper can be uploaded as a paper version.
 - [ ] Source blocks can be displayed in stable order.

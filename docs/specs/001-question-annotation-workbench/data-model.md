@@ -61,13 +61,12 @@ Fields:
 
 Possible `block_type`:
 
-- `paragraph`
-- `question_candidate`
-- `option_candidate`
-- `answer_candidate`
+- `text`
 - `table`
 - `image`
 - `unknown`
+
+Word V1 `DocumentBlock` values describe reliable source structure only. They must not encode inferred business roles such as question, answer, requirement, material, option, knowledge point, or question type. Original printed labels may be retained as source text, not parser conclusions. A later migration must retain original reading order and any reliable page/bounding-box information without manufacturing unavailable coordinates.
 
 #### SourceMaterial
 
@@ -348,7 +347,7 @@ Rules:
 
 #### SourceSpan
 
-Connects a question version or field to source document blocks.
+Connects a question version field to one or more source document blocks as a human-confirmed provenance relationship. It does not assert character-level equality between final edited text and source text.
 
 Fields:
 
@@ -362,6 +361,8 @@ Fields:
 - `char_start`
 - `char_end`
 - `note`
+
+Word V1 must allow multiple `SourceSpan` records for the same `question_version_id` and `field_name`, retain their source order, and allow a human correction to the provenance relationship. A source span may reference an image block as evidence even though the current pure-text field cannot embed that image.
 
 #### KnowledgePoint
 
@@ -534,13 +535,12 @@ Likely search indexes:
 
 可能的 `block_type`：
 
-- `paragraph`，段落
-- `question_candidate`，疑似题目
-- `option_candidate`，疑似选项
-- `answer_candidate`，疑似答案
+- `text`，文字
 - `table`，表格
 - `image`，图片
 - `unknown`，未知
+
+Word V1 的 `DocumentBlock` 只表达可靠来源结构，不能编码题目、答案、作答要求、材料、选项、知识点或题型等推断出的业务角色。原始文件中印出的标题或标签可以作为来源文字保留，但不是解析器结论。后续迁移必须保存原始阅读顺序和可靠的页码/坐标，不能制造不存在的坐标。
 
 #### SourceMaterial，共享来源材料
 
@@ -821,7 +821,7 @@ V1 纯文本配置中，`stem_text`、`requirement_text`、`question_text`、`re
 
 #### SourceSpan，来源片段
 
-将题目版本或题目字段连接到来源文档块。
+把题目版本字段与一个或多个来源文档块连接为人工确认的来源关系；它不表示最终人工编辑文本与来源文字逐字一致。
 
 字段：
 
@@ -835,6 +835,8 @@ V1 纯文本配置中，`stem_text`、`requirement_text`、`question_text`、`re
 - `char_start`
 - `char_end`
 - `note`
+
+Word V1 必须允许同一个 `question_version_id` 和 `field_name` 对应多条 `SourceSpan`，保存它们的来源顺序，并允许人工更正来源关系。来源片段可以引用图片块作为证据，即使当前纯文本字段不能嵌入该图片。
 
 #### KnowledgePoint，知识点
 
