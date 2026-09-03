@@ -1,6 +1,6 @@
 # WDV1-003 / G-08 Text-Structuring Technical Precheck
 
-**Status: TECHNICAL PRECHECK = PASS.** This is a disposable, synthetic-only comparison performed before any WDV1-003 implementation. It does not approve implementation; [`WDV1_G08_IMPLEMENTATION_CONTRACT.md`](./WDV1_G08_IMPLEMENTATION_CONTRACT.md) remains `PENDING PRODUCT APPROVAL`.
+**Status: TECHNICAL PRECHECK = PASS.** This is a disposable, synthetic-only comparison performed before any WDV1-003 implementation. The precheck itself does not approve implementation; the separate, now-approved authorization is recorded in [`WDV1_G08_IMPLEMENTATION_CONTRACT.md`](./WDV1_G08_IMPLEMENTATION_CONTRACT.md).
 
 ## 1. Baseline verification
 
