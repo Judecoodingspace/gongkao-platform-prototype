@@ -53,12 +53,12 @@ Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` 
 
 ### Phase 3: Document Import
 
-- [ ] Create `paper` and `paper_version` schema.
-- [ ] Create upload endpoint.
-- [ ] Store uploaded file metadata.
-- [ ] Create parser adapter interface.
-- [ ] Implement first DOCX parser POC.
-- [ ] Store document blocks with source provenance.
+- [ ] `WDV1-001` Approve `G-06` Word design: storage, parser boundary, provenance schema/API, security limits, and fixture policy.
+- [ ] `WDV1-002` Add approved document-block/source-span migrations; do not recreate existing `papers` or `paper_versions`.
+- [ ] `WDV1-003` Implement safe DOCX upload and source-version finalization.
+- [ ] `WDV1-004` Implement deterministic text-only DOCX parser candidates behind an adapter.
+- [ ] `WDV1-005` Implement source preview, explicit field fill, and provenance APIs.
+- [ ] `WDV1-006` Complete `G-07`/`G-08` backend and browser acceptance with sanitized fixtures.
 
 ### Phase 4: Annotation Workbench
 
@@ -134,12 +134,12 @@ Tasks are dependency ordered. Terra must not begin `SHV1-004` before `SHV1-001` 
 
 ### 阶段 3：文档导入
 
-- [ ] 创建 `paper` 和 `paper_version` schema。
-- [ ] 创建上传接口。
-- [ ] 存储上传文件元数据。
-- [ ] 创建解析器适配器接口。
-- [ ] 实现第一版 DOCX 解析器 POC。
-- [ ] 存储带来源追溯信息的文档块。
+- [ ] `WDV1-001` 批准 `G-06` Word 设计：存储、解析器边界、来源 schema/API、安全限制和 fixture 策略。
+- [ ] `WDV1-002` 增加已批准的文档块/来源片段迁移；不得重建已有 `papers` 或 `paper_versions`。
+- [ ] `WDV1-003` 实现安全 DOCX 上传和来源版本定稿。
+- [ ] `WDV1-004` 通过适配器实现确定性的纯文本 DOCX 候选解析。
+- [ ] `WDV1-005` 实现来源预览、明确字段填入和来源追溯 API。
+- [ ] `WDV1-006` 用脱敏 fixture 完成 `G-07`/`G-08` 后端与浏览器验收。
 
 ### 阶段 4：拆题工作台
 

@@ -141,6 +141,9 @@ No implementation agent may skip these gates:
 - `G-03 Migration` (`approved 2026-08-28`): SQL naming, non-cascading FK behavior, deferred current-version ownership FKs, indexes, deterministic seeds, disposable PostgreSQL test database, backup, and rollback policy are fixed in the migration plan.
 - `G-04 Backend acceptance` (`approved 2026-08-31`): migrations and backend contract tests pass before frontend persistence wiring begins.
 - `G-05 End-to-end acceptance`: the production frontend can save, reload, switch, submit, and conflict-test sanitized drafts without bypassing human review.
+- `G-06 Word design`: approve storage, parser-adapter boundary, document-block/source-span migration and API contract, security limits, and sanitized fixture policy before Word code begins.
+- `G-07 Word backend`: approved PostgreSQL 16 migrations and DOCX upload/parser/provenance contract tests pass; parser output remains a candidate only.
+- `G-08 Word end-to-end`: an annotator can use sanitized DOCX source text to explicitly fill draft fields, save, switch, return, submit, and trace the result to its source version.
 
 Terra must execute tasks `SHV1-001` through `SHV1-012` in `tasks.md` in order. It must stop at any unapproved gate, preserve unrelated worktree changes, and record each implementation checkpoint in the relevant GitHub issue with no private paper content.
 
@@ -279,5 +282,8 @@ tests/
 - `G-03 迁移`（`2026-08-28 已批准`）：SQL 命名、非级联外键、延迟当前版本归属外键、索引、确定性种子、一次性 PostgreSQL 测试库、备份与回滚策略已固定。
 - `G-04 后端验收`（`2026-08-31 已批准`）：迁移和后端契约测试通过后，才能开始前端持久化接线。
 - `G-05 端到端验收`：正式前端使用脱敏草稿完成保存、重载、切题、提交和并发冲突验证，且不能绕过人工审核。
+- `G-06 Word 设计`：在 Word 代码开始前，批准存储、解析器适配器边界、文档块/来源片段迁移和 API 契约、安全限制及脱敏 fixture 策略。
+- `G-07 Word 后端`：已批准 PostgreSQL 16 迁移及 DOCX 上传、解析、来源追溯契约测试通过；解析输出始终只是候选。
+- `G-08 Word 端到端`：标注员可利用脱敏 DOCX 来源文字明确填入草稿字段、保存、切题、返回、提交，并追溯到来源版本。
 
 Terra 必须按 `tasks.md` 中 `SHV1-001` 至 `SHV1-012` 的依赖顺序执行。任一门禁未批准时应停止，不得猜测；必须保留工作区无关修改，并在对应 GitHub issue 记录每个实现检查点，且不得包含私有试卷内容。

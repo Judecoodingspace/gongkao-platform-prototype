@@ -27,6 +27,14 @@
 
 ### Functional Acceptance
 
+### Word-Assisted Annotation V1 (requires G-06)
+
+- [ ] A DOCX upload is stored as an immutable paper version with hash and upload outcome.
+- [ ] Parser candidates are ordered, text-only, provenance-bearing suggestions and never automatically create or submit a question.
+- [ ] An annotator can explicitly fill a Shenlun field from selected source text, inspect its source reference, save, switch, return, and submit.
+- [ ] Parser failure preserves the original upload and leaves manual draft entry available.
+- [ ] Upload, parser, API, migration, and browser fixtures are sanitized; real paper text is not committed.
+
 - [ ] A source paper can be uploaded as a paper version.
 - [ ] Source blocks can be displayed in stable order.
 - [ ] A question draft can be created from a source block.

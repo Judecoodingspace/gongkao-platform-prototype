@@ -1178,3 +1178,11 @@ Copy this section for every discussion. Use an ID such as `REV-20260707-01`.
 - `SHV1-011` 已完成；下一项只能是 `SHV1-012 / G-05` 的脱敏端到端验收，不得在 G-05 通过前扩展新的产品能力。
 
 ---
+
+### REV-20260903-01: Word-assisted annotation V1 planning / Word 辅助录题 V1 规划
+
+- 产品规划确认下一阶段目标是降低人工在 Word 与工作台之间复制、定位和核对的成本，而不是自动拆题或自动入库。
+- 纠正过期任务：`papers` 与 `paper_versions` 已在 M-001 实现；Word V1 后续只在 G-06 批准后新增上传、解析候选块和来源片段的已评审变更。
+- 新增 `word-assisted-annotation-v1.md`，定义 G-06/G-07/G-08、WDV1-001 至 WDV1-006、范围边界与完成证据；GitHub issue #6 记录本次规划。
+
+---
