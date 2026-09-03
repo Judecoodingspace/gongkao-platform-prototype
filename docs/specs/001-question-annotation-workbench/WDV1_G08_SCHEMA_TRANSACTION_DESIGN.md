@@ -1,6 +1,6 @@
 # WDV1-003 / G-08 Schema + Transaction Design
 
-**STATUS = PENDING IMPLEMENTATION REVIEW.** This is a schema and transaction design for the already-approved WDV1-003 contract. It neither creates nor approves a migration, ORM model, parser, API, worker, storage-read implementation, or PostgreSQL change. `WDV1-003 IMPLEMENTATION = NOT STARTED` and `G-08 = IN PROGRESS` remain unchanged.
+**STATUS = PENDING FINAL APPROVAL.** This is a schema and transaction design for the already-approved WDV1-003 contract. It neither creates nor approves a migration, ORM model, parser, API, worker, storage-read implementation, or PostgreSQL change. `WDV1-003 IMPLEMENTATION = NOT STARTED` and `G-08 = IN PROGRESS` remain unchanged.
 
 **Authority read for this design:** platform `main@12b55c0e539f67adbd919d349a1bbc2412b048b8`, especially the frozen G-06/G-08 decisions, approved WDV1-003 contract, T1 technical choice, and technical precheck. The API comparison baseline is `main@8fbe0a6fa9a2ed96993a220ed6d65526cd703b66`.
 
@@ -22,7 +22,8 @@
 | --- | --- | --- |
 | MUST HAVE | `id`, `paper_version_id`, `execution_state`, `result_status`, `parser_name`, `parser_version`, `parser_config`, `verified_source_hash`, `runtime_fingerprint`, `triggered_by`, `created_at`, `completed_at` | Identifies the specific historical run, its immutable source and reproducibility inputs, who asked for it, and whether a terminal source-structuring result exists. |
 | MUST HAVE | `diagnostic_code`, `diagnostic_metadata` | Safe machine-readable terminal failure/integrity diagnostics; metadata is bounded and cannot contain source text, paths, raw XML, bytes, credentials, or arbitrary traceback bodies. |
-| NICE TO HAVE | an index on `(paper_version_id, created_at)` and a composite uniqueness target `(id, paper_version_id)` | Supports history reads and lets ActiveSelection prove that its target belongs to the same `PaperVersion`. |
+| MUST HAVE | candidate key `UNIQUE (paper_version_id, id)` | Required PostgreSQL referenced candidate key for the ActiveSelection composite foreign key; it proves that a selected result belongs to the same `PaperVersion`. |
+| NICE TO HAVE | an index on `(paper_version_id, created_at)` | Supports history reads. |
 | DO NOT STORE | raw DOCX, `storage_uri`, absolute path, full parser output, raw XML, business labels, confidence score, duplicate `client_request_id`, page/bbox, `PaperVersion.parser_*` values | These either violate the private-source boundary, create a second source truth, invent unavailable coordinates, or belong elsewhere. |
 
 `execution_state` is deliberately separate from D6's terminal source-structuring status:
@@ -40,7 +41,7 @@ This is the minimum lifecycle needed to reserve one idempotent intent before wor
 
 ### 2.2 `DocumentBlock`
 
-**Purpose:** an immutable, usable, natural-paragraph text block belonging to exactly one specific terminal processing result.
+**Purpose:** an immutable, usable, natural-paragraph text block belonging to exactly one specific terminal `success` or `partial` processing result.
 
 | Classification | Fields | Reason |
 | --- | --- | --- |
@@ -48,7 +49,7 @@ This is the minimum lifecycle needed to reserve one idempotent intent before wor
 | NICE TO HAVE | unique `(processing_result_id, source_order)` and a positive `source_order` check | Makes each result's ordered collection deterministic and rejects malformed order. |
 | DO NOT STORE | `paper_version_id`, page number, bbox, `created_at`, normalized text, business role/taxonomy, asset/image/table payload | `paper_version_id` is derivable through the result; page/bbox are unavailable in T1; a per-block timestamp adds no immutable provenance; the rest is out of scope or forbidden. |
 
-For WDV1-003, `block_type` is constrained to `text`; non-text structures are gaps rather than placeholder text/image/table blocks. A later, separately reviewed WDV1-004 migration may extend that vocabulary without redefining this text-first history.
+For WDV1-003, `block_type` is constrained to `text`; non-text structures are gaps rather than placeholder text/image/table blocks. A `failed` result persists no usable `DocumentBlock` rows at all. A later, separately reviewed WDV1-004 migration may extend that vocabulary without redefining this text-first history.
 
 ### 2.3 `SourceProcessingGap`
 
@@ -70,7 +71,7 @@ For WDV1-003, `block_type` is constrained to `text`; non-text structures are gap
 | Classification | Fields | Reason |
 | --- | --- | --- |
 | MUST HAVE | `paper_version_id`, `processing_result_id`, `selected_at`, `selected_by` | One pointer per source version, its selected target, and minimum auditable selection metadata. |
-| NICE TO HAVE | `paper_version_id` as primary key; unique `processing_result_id`; composite FK `(processing_result_id, paper_version_id)` to `SourceProcessingResult` | Ensures at most one active selection, prevents cross-paper targets, and makes selection lookup simple. |
+| MUST HAVE | `paper_version_id` as primary key; unique `processing_result_id`; composite FK `(paper_version_id, processing_result_id)` to `SourceProcessingResult(paper_version_id, id)` | Ensures at most one active selection and prevents cross-paper targets through a PostgreSQL-enforced same-source relationship. |
 | DO NOT STORE | `active` boolean, copied result status, copied parser metadata, copied gaps, history snapshots | A row's presence is the active state; all copied fields would drift from immutable result truth. Selection change history belongs in append-only audit events. |
 
 ## 3. Gap-model decision
@@ -119,9 +120,9 @@ PaperVersionActiveProcessing ─────────► one SourceProcessing
              (mutable pointer; target must belong to this PaperVersion)
 ```
 
-## 6. Idempotency model
+## 6. Idempotency model and reservation lifecycle
 
-The existing `idempotency_keys` pattern is sufficient and should be reused rather than duplicating a request key on `SourceProcessingResult`.
+The existing `idempotency_keys` table must be reused rather than creating a parallel idempotency system. Its current uniqueness scope is sufficient, but its required non-null `result_resource_type`, `result_resource_id`, and `result_http_status` mean it is presently a completed-response cache and cannot be treated as though it already models an in-progress reservation.
 
 ```text
 operation_scope = source_processing:trigger
@@ -132,32 +133,33 @@ result target   = SourceProcessingResult.id
 
 - The key is scoped to the triggering actor and processing operation, as in the existing API baseline, not merely to a `PaperVersion`.
 - First use creates the idempotency reservation and one processing-result identity atomically.
-- A retry with the same key and equal request hash locks the key and returns that same result, whether it is still `processing` or terminal.
+- A retry with the same key and equal request hash locks the key and returns that same result, whether it is still `processing` or terminal; it does not start a second parser execution.
 - Reuse of the same key with a different `PaperVersion`, parser identity, or canonical configuration has a different request hash and is an idempotency conflict; it never silently retargets the result.
 - A new explicit human action must use a new key and therefore creates a new independent result, even for identical DOCX bytes and configuration.
 
-This describes data sufficiency only; it does not choose an HTTP header, response status, URL, or retry payload.
+**Recommended compatibility strategy: in-place reservation metadata.** For the processing-trigger scope, Transaction A writes the existing non-null idempotency fields immediately: resource type `source_processing_result`, the reserved result ID, and one fixed, documented accepted/in-progress response meaning. Thus a retry can legally point to a real result even before it is terminal. Transaction B may update only the idempotency response-cache metadata to the terminal response meaning together with result finalization. This limited cache-metadata update does not modify the immutable processing result or its evidence.
+
+The future minimal API contract must choose the actual accepted/in-progress response semantics before migration implementation, but this design deliberately does not choose an HTTP number, header, URL, or payload. If that contract cannot safely use one fixed accepted/in-progress meaning and a later terminal cache update, the approved migration must make a small additive extension of the existing `idempotency_keys` response-state metadata; it must not introduce a separate idempotency system.
 
 ## 7. Key constraints by enforcement layer
 
 ### Database-enforced
 
 - UUID primary keys; NOT NULL identities and timestamps where stated.
-- `PaperVersion → SourceProcessingResult`, `SourceProcessingResult → DocumentBlock`, `SourceProcessingResult → SourceProcessingGap`, and selection references all use `ON DELETE RESTRICT`.
+- `SourceProcessingResult` has PK `(id)` and candidate key `UNIQUE (paper_version_id, id)`; `PaperVersion → SourceProcessingResult`, `SourceProcessingResult → DocumentBlock`, `SourceProcessingResult → SourceProcessingGap`, and selection references all use `ON DELETE RESTRICT`.
 - Result status check: only `success`, `partial`, `failed`; lifecycle consistency check between `execution_state`, `result_status`, and `completed_at`.
 - `DocumentBlock` and `SourceProcessingGap` order values are positive; block `source_order` is unique within a result.
-- `PaperVersionActiveProcessing.paper_version_id` is primary key/unique, enforcing at most one active selection per `PaperVersion`.
-- Composite selection FK proves the selected result belongs to its `PaperVersion`; a unique target prevents one result from being selected twice.
-- Existing `idempotency_keys` uniqueness and request-hash checks continue to protect retry identity.
+- `PaperVersionActiveProcessing.paper_version_id` is its PK; its composite FK `(paper_version_id, processing_result_id)` references `SourceProcessingResult(paper_version_id, id)`. This rejects a cross-PaperVersion active target; a unique target prevents one result from being selected twice.
+- Existing `idempotency_keys` uniqueness and request-hash checks continue to protect retry identity; its response cache must use the reservation compatibility strategy above.
 
 ### Service / transaction-enforced
 
 - Only finalized DOCX versions may be processed; bytes are read through the future provider-neutral read-only storage abstraction and hash-reverified before terminal persistence.
 - Only `success` may obtain automatic initial activation; `partial` only through an explicit audited activation; `failed` is never selectable.
 - A later `success` or `partial` never replaces any existing active selection automatically.
-- Terminal result metadata, blocks, gaps, audit event, and any initial active selection commit atomically. A DB failure leaves no terminal `success`/`partial` with partial children.
+- Reservation and terminalization are two short transactions with parser execution outside either database transaction. Terminal `success`/`partial` metadata, blocks, gaps, audit event, and any initial active selection commit atomically. A DB failure leaves no terminal `success`/`partial` with partial children.
 - Explicit activation locks and validates the candidate result, target `PaperVersion`, and current selection before one atomic pointer update.
-- Terminal rows and child evidence are never patched/deleted; a correction is a new result. Failed diagnostic fragments are not exposed through normal ordered-block reads.
+- Terminal rows and child evidence are never patched/deleted; a correction is a new result. A `failed` result persists no usable `DocumentBlock`; safe failed diagnostics are never exposed through normal ordered-block reads.
 
 ### Parser-enforced
 
@@ -170,9 +172,11 @@ This describes data sufficiency only; it does not choose an HTTP header, respons
 
 ### 8.1 Intent reservation and terminalization
 
-1. In a short transaction, lock the existing idempotency key if present. If it is a matching replay, return its result. Otherwise validate the finalized `PaperVersion`, create the idempotency key and a `processing` `SourceProcessingResult` identity together, and commit the reservation.
-2. Read source bytes through the future read-only storage boundary, recompute SHA-256, and run T1 outside the final database transaction. No source content enters logs or the database beyond permitted block text in a terminal usable result.
-3. In one terminal transaction, lock the `PaperVersion` row (`SELECT … FOR UPDATE`) before reading/updating its selection; lock the reserved result; insert all blocks and gaps; set the terminal status/metadata; append the safe audit event; and, only for initial `success`, insert the active selection if absent. Commit once.
+**Transaction A — reserve the processing intent.** In a short transaction, lock the existing idempotency key if present. A matching replay returns its referenced result identity/state. Otherwise validate the finalized `PaperVersion`; create `SourceProcessingResult(execution_state = processing, result_status = NULL)`; bind the idempotency key immediately to that real result using the documented non-null accepted/in-progress response-cache metadata; and commit. A retry that finds this reservation returns it and must not launch a second parser.
+
+**Parser phase — outside a database transaction.** Read source bytes through the future provider-neutral read-only storage boundary, recompute SHA-256, and run T1 Direct OOXML parsing. It yields either safe terminal diagnostics or candidate usable blocks/gaps and terminal status. No source content enters logs or the database beyond permitted text blocks of a terminal `success`/`partial` result.
+
+**Transaction B — finalize the reserved result.** Lock the reserved result and its `PaperVersion` row (`SELECT … FOR UPDATE`) before reading/updating selection state. For `success`/`partial`, insert the complete blocks and gaps; for `failed`, insert no usable blocks and retain only permitted safe diagnostic/parser/runtime/source-verification metadata. Set `execution_state = completed`, set the terminal `result_status`, set `completed_at`, append the safe audit event, update idempotency response-cache metadata if required, and only for an initial `success` insert active selection if absent. Commit once.
 
 The parent-row lock serializes competing first-success terminalizations. It is necessary even though the selection table has a one-row structural invariant: two transactions cannot both observe and insert an absent selection while holding the same `PaperVersion` lock.
 
@@ -192,6 +196,8 @@ Within one transaction: lock the target `PaperVersion`; lock its active-selectio
 | 6 — retry | PASS | Existing actor/scope/client-request key locks to the same result; a changed request hash conflicts. |
 | 7 — concurrent first success | PASS | `PaperVersion FOR UPDATE` serializes terminalization; the first inserts selection, the second sees it and stays inactive. |
 | 8 — transaction failure during block write | PASS | The terminal transaction rolls back blocks, gaps, terminal state, audit, and selection together; no usable half-result is committed. |
+| 9 — retry during processing | PASS | The reservation's existing idempotency key returns the same `processing` result; no second result or parser work begins. |
+| 10 — cross-Paper active FK attempt | PASS | The composite FK to `(paper_version_id, id)` rejects a selection whose result belongs to another PaperVersion. |
 
 ## 10. Legacy `PaperVersion.parser_*` fields
 
@@ -239,7 +245,7 @@ Implementation risks to resolve through tests, without changing frozen semantics
 ## 14. Review gate
 
 ```text
-SCHEMA + TRANSACTION DESIGN = READY FOR REVIEW
+SCHEMA + TRANSACTION DESIGN = READY FOR APPROVAL
 
 IMPLEMENTATION CODE
 = NOT STARTED
