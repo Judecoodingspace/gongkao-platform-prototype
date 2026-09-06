@@ -44,6 +44,34 @@ WDV1-003 的主路线直接读取 DOCX/OOXML 的自然文档结构，忠实取�
 
 未知丢失或未知顺序完整性不得标为 success。不采用简单百分比阈值、confidence score 或 AI risk score。structuring status 与 visual preview status 必须分开；不得用一个 `document_status` 混合 upload、structuring 与 preview。
 
+## 7. Forward compatibility clarification
+
+WDV1-003 是 text-first 切片；对于正常纯文字申论 DOCX，结果应为 `Text Blocks > 0`、`Gap = 0`、`status = success`。
+
+在 WDV1-003 中，图片、OMML/公式、表格、文本框及其他非文字主正文结构被记录为 `SourceProcessingGap`，表示：
+
+> **当前 text-first ProcessingResult 尚未把该内容建模成一个 usable / traceable non-text source object。**
+
+它**不**表示：
+
+* 该内容在技术上无法解析；
+* 该内容在产品上永久不支持；
+* 图片、公式、表格未来永远只能是 Gap。
+
+因此：
+
+```text
+WDV1-003 Gap
+= current text-first processing capability boundary evidence
+
+NOT
+= permanent unsupported-content classification
+```
+
+未来 WDV1-004 或行测能力可以通过 additive reviewed extension 增加 traceable image source object、traceable formula source object、traceable table source object 或另一套经评审的统⼀ source-item 模型。
+
+具体未来 non-text schema **现在不冻结**。M-006 当前 schema 不需要因此修改。历史 ProcessingResult 及其 Gap 证据保持不可变；parser 能力提升后应创建新的 ProcessingResult，而不是改写旧结果。
+
 ## Gate 状态
 
 `G-08 DESIGN DECISIONS = APPROVED`

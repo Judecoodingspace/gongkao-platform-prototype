@@ -64,6 +64,12 @@ For WDV1-003, `block_type` is constrained to `text`; non-text structures are gap
 
 `source_order` is the reliable main-body structural position; an inline unsupported structure may share the containing paragraph's order and is distinguished by `source_region_kind = within_paragraph`. It is not fabricated visual coordinate data. `gap_type` is a small controlled vocabulary such as `table`, `drawing`, `omml`, `textbox`, `embedded_object`, or `unknown`.
 
+#### Forward compatibility note
+
+`SourceProcessingGap` records the boundary of the current text-first capability for a specific processing run. It does **not** permanently classify the content as unsupported. Future reviewed slices (e.g., WDV1-004, 行测 support) may introduce traceable image/formula/table source objects or another unified source-item model through additive schema changes.
+
+M-006 is intentionally limited to text blocks and gap evidence; it does **not** need to be modified to accommodate those future objects. Historical `ProcessingResult` rows, including their gaps, remain immutable; a parser capability upgrade produces a new `ProcessingResult`, never a rewrite of existing history.
+
 ### 2.4 `PaperVersionActiveProcessing`
 
 **Purpose:** the one mutable operational selection of the processing result currently offered as active for a `PaperVersion`. It is not source evidence and it is not a quality status.
