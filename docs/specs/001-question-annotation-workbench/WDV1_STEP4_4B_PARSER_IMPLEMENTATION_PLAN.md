@@ -255,7 +255,7 @@ Algorithm-level description:
 6. Within a paragraph, inspect runs and inline structures:
    - supported: `w:r` containing `w:t`, `w:tab`, `w:br`, `w:cr`; `w:hyperlink` containing supported runs.
    - unsupported but known: `w:drawing`, `w:pict`, `m:oMath`, `m:oMathPara`, `w:txbxContent`, `w:object`, `w:altChunk`.
-   - unknown: any other element that may carry content (e.g., `w:ins`, `w:del`, `w:moveFrom`, `w:moveTo`, comment ranges) is treated as an unknown inline Gap.
+   - unknown: any other element that is reliably located and may carry or alter source content / reading structure (e.g., `w:ins`, `w:del`, `w:moveFrom`, `w:moveTo`, `w:altChunk`) is treated as a bounded unknown inline Gap. Pure bookkeeping/property/range markers (e.g., `w:pPr`, `w:rPr`, `w:proofErr`, `w:bookmarkStart`, `w:bookmarkEnd`, `w:lastRenderedPageBreak`) do not create gaps on their own.
 7. `source_order` for body-level objects is their body-child index. `source_order` for inline objects is the containing paragraph's body-child index, with `source_region_kind = within_paragraph`.
 
 The parser does not use `python-docx`. It does not follow external relationships. It does not extract images, resolve drawing embeds, or reconstruct visual layout.
@@ -319,9 +319,16 @@ no ParsedBlockCandidate is created
 GapCandidate records are emitted instead
 ```
 
-### F.6 Review flag
+### F.6 Final candidate mapping for `w:br` and `w:cr`
 
-The exact mapping of `w:cr` to `"\r"` and the preservation of all `w:t` whitespace (including when `xml:space="preserve"` is absent) are proposed deterministic choices. If review prefers a different but equally deterministic mapping, it must be recorded as an approved plan amendment before implementation.
+| OOXML element | Reconstructed character | Reason |
+| --- | --- | --- |
+| `w:br` | `"\n"` | WordprocessingML line break; maps to a single line-feed to preserve explicit author line break intent without inventing visual layout. |
+| `w:cr` | `"\r"` | WordprocessingML carriage-return element; preserves its distinct identity from `w:br`. |
+
+This preserves two distinct inline break semantics deterministically. The exact character choices are source-faithful for an authoritative `text_original`; downstream consumers (if any) may render them as they see fit in a later, separately reviewed slice.
+
+`w:t` whitespace is always taken exactly as the element text value (`element.text or ""`). No `strip()`, trim, or normalization is applied regardless of the presence or absence of `xml:space="preserve"`.
 
 ```text
 PLAN_DECISION_REQUIRES_REVIEW = NO
@@ -352,17 +359,30 @@ Duplicate nested OOXML implementation nodes inside a single recognized container
 
 ### G.2 Within-paragraph occurrence
 
-The parser scans each paragraph for the first occurrence of each unsupported anchor type. For each anchor found, it emits one gap.
+The parser scans each paragraph for reliably distinguishable unsupported logical occurrences. Each occurrence produces one `GapCandidate`, regardless of whether the same `gap_type` appears multiple times in the same paragraph.
+
+Duplicate nested OOXML implementation nodes inside a single recognized container do not create additional gaps.
 
 | Anchor | gap_type | Notes |
 | --- | --- | --- |
-| `w:drawing` or `w:pict` | `drawing` | Any drawing/picture inline. Nested elements inside the drawing do not create extra gaps. |
-| `m:oMath` or `m:oMathPara` | `omml` | OMML formula container. |
+| `w:drawing` or `w:pict` | `drawing` | One drawing/picture occurrence. Two separate `w:drawing` elements in the same paragraph → two drawing gaps. Nested elements inside the drawing do not create extra gaps. |
+| `m:oMath` or `m:oMathPara` | `omml` | One formula occurrence. Two separate formula elements in the same paragraph → two omml gaps. |
 | `w:txbxContent` | `textbox` | Text box content. Text inside is not treated as main-body paragraph text. |
 | `w:object` | `embedded_object` | Embedded object. |
 | `w:altChunk` | `unknown` | External chunk inclusion; content cannot be trusted as normal main-body text. |
-| `w:ins`, `w:del`, `w:moveFrom`, `w:moveTo`, comment ranges | `unknown` | Tracked changes / comments are not supported in WDV1-003. |
+| `w:ins`, `w:del`, `w:moveFrom`, `w:moveTo`, comment ranges | `unknown` | Tracked changes / comments are not supported in WDV1-003. Only elements that may carry or alter source content produce gaps. |
 | Any other content-bearing element not in the supported set | `unknown` | Bounded unknown gap. |
+
+The following non-content bookkeeping/property/range markers do NOT create gaps on their own:
+
+```text
+w:pPr
+w:rPr
+w:proofErr
+w:bookmarkStart
+w:bookmarkEnd
+w:lastRenderedPageBreak
+```
 
 All within-paragraph gaps share the containing paragraph's `source_order` and use `source_region_kind = within_paragraph`.
 
@@ -407,7 +427,15 @@ unknown_loss_risk         # any unbounded or unlocatable unknown structure
 ### H.2 Decision procedure
 
 ```text
-if any reliability flag is False OR unknown_loss_risk is True:
+positive_reliability_flags:
+- archive_reliable
+- body_traversal_reliable
+- text_reconstruction_reliable
+- order_reliable
+
+if not all(positive_reliability_flags):
+    status_candidate = failed
+elif unknown_loss_risk:
     status_candidate = failed
 elif gap_count > 0:
     status_candidate = partial
@@ -565,9 +593,13 @@ This mirrors the existing upload-test pattern and keeps fixtures inspectable.
 | Drawing-only paragraph | 0 blocks | 1 `drawing` gap, within_paragraph | partial | `DRAWING_DETECTED` |
 | Text + drawing + text | 1 block with surrounding text | 1 `drawing` gap | partial | `DRAWING_DETECTED` |
 | OMML in paragraph | 1 block with surrounding text | 1 `omml` gap | partial | `OMML_DETECTED` |
+| Two OMML occurrences in one paragraph | 1 block with surrounding text | 2 `omml` gaps, same `source_order` | partial | `OMML_DETECTED` |
 | Textbox in paragraph | 1 block with surrounding text | 1 `textbox` gap | partial | `TEXTBOX_DETECTED` |
+| Two drawings in one paragraph with text | 1 block with surrounding text | 2 `drawing` gaps, same paragraph `source_order` | partial | `DRAWING_DETECTED` |
+| Drawing-only paragraph | 0 blocks | 1 `drawing` gap, within_paragraph | partial | `DRAWING_DETECTED` |
 | Unknown bounded body child | blocks before/after preserved | 1 `unknown` gap | partial | `UNKNOWN_BODY_CHILD` |
 | Unknown inline structure | block with supported text | 1 `unknown` gap | partial | `UNKNOWN_INLINE_STRUCTURE` |
+| Paragraph with only property/bookkeeping markers | 1 block with text | 0 | success | none |
 | Malformed document.xml | 0 blocks | 0 | failed | `DOCUMENT_XML_PARSE_ERROR` |
 | Missing `w:body` | 0 blocks | 0 | failed | `BODY_MISSING` |
 | Repeat-parse determinism | identical semantic output on second run | identical | identical | identical |
