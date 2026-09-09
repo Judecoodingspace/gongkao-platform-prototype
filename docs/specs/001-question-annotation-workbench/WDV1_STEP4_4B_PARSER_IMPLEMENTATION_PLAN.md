@@ -326,7 +326,7 @@ GapCandidate records are emitted instead
 | `w:br` | `"\n"` | WordprocessingML line break; maps to a single line-feed to preserve explicit author line break intent without inventing visual layout. |
 | `w:cr` | `"\r"` | WordprocessingML carriage-return element; preserves its distinct identity from `w:br`. |
 
-This preserves two distinct inline break semantics deterministically. The exact character choices are source-faithful for an authoritative `text_original`; downstream consumers (if any) may render them as they see fit in a later, separately reviewed slice.
+The mapping preserves the distinct OOXML element identity (`w:br` versus `w:cr`) in reconstructed text. Their ordinary line-ending behavior is equivalent in WordprocessingML; the different Python characters are a deliberate lexical/source-representation choice, not a claim of different visual line-breaking semantics. Downstream consumers (if any) may render them as they see fit in a later, separately reviewed slice.
 
 `w:t` whitespace is always taken exactly as the element text value (`element.text or ""`). No `strip()`, trim, or normalization is applied regardless of the presence or absence of `xml:space="preserve"`.
 
@@ -596,7 +596,6 @@ This mirrors the existing upload-test pattern and keeps fixtures inspectable.
 | Two OMML occurrences in one paragraph | 1 block with surrounding text | 2 `omml` gaps, same `source_order` | partial | `OMML_DETECTED` |
 | Textbox in paragraph | 1 block with surrounding text | 1 `textbox` gap | partial | `TEXTBOX_DETECTED` |
 | Two drawings in one paragraph with text | 1 block with surrounding text | 2 `drawing` gaps, same paragraph `source_order` | partial | `DRAWING_DETECTED` |
-| Drawing-only paragraph | 0 blocks | 1 `drawing` gap, within_paragraph | partial | `DRAWING_DETECTED` |
 | Unknown bounded body child | blocks before/after preserved | 1 `unknown` gap | partial | `UNKNOWN_BODY_CHILD` |
 | Unknown inline structure | block with supported text | 1 `unknown` gap | partial | `UNKNOWN_INLINE_STRUCTURE` |
 | Paragraph with only property/bookkeeping markers | 1 block with text | 0 | success | none |
