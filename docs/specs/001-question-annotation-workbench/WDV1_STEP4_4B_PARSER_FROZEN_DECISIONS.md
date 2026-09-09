@@ -844,8 +844,19 @@ WITH CONSOLIDATION CLARIFICATIONS
 OVER-DESIGN AUDIT = PASS
 AFTER SCOPE REDUCTION
 
+PRODUCT OWNER DECISION APPROVAL = COMPLETE
+
+GOVERNANCE WRITE / COMMIT / PUSH = COMPLETE
+
 STEP 4.4B FROZEN DECISIONS =
-CANDIDATE FOR PRODUCT OWNER APPROVAL
+APPROVED BY PRODUCT OWNER
+PENDING MAIN MERGE
+
+TEAM A GITHUB VERIFICATION =
+PENDING AFTER THIS CORRECTIVE REVISION
+
+MERGE TO MAIN =
+NOT YET AUTHORIZED
 
 STEP 4.4B IMPLEMENTATION PLAN =
 NOT YET AUTHORIZED
@@ -854,16 +865,17 @@ STEP 4.4B IMPLEMENTATION =
 NOT AUTHORIZED
 ```
 
-Product Owner 明确批准本文后，下一步只能进入：
+本次 corrective governance commit 之后，下一步只能进入：
 
 ```text
-WRITE FROZEN DECISIONS TO GOVERNANCE REPO
-→ commit
+corrective governance commit
 → push
 → STOP
-→ Team A verification
+→ Team A GitHub re-verification
+→ Product Owner merge authorization
+→ merge to main
 ```
 
-在 Frozen Decisions 的 GitHub authority 被确认之前，不得开始 STEP 4.4B Implementation Plan。
+在 main merge authority 被独立确认之前，不得开始 STEP 4.4B Implementation Plan。
 
-在 Implementation Plan 被独立审查和 Product Owner 批准之前，不得开始 Parser implementation。
+在 Implementation Plan 被独立审查并由 Product Owner 明确批准之前，不得开始 Parser implementation。
