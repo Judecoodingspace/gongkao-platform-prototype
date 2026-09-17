@@ -173,14 +173,17 @@ Questions are created only by `create question` or the successful creation branc
 Ordering rules:
 
 - `global_order` is package-wide, contiguous at creation, starts at 1, and is mirrored to `QuestionSlot.slot_number` and `QuestionVersion.source_order_index`;
-- `source_question_order` is contiguous within the explicit source-document specialty/section snapshot `(package, source_topic_order, source_topic_label)` and is mirrored to `QuestionVersion.source_question_order`;
+- `source_question_order` is contiguous within the explicit source-document source-topic snapshot `(package, source_topic_order, source_topic_label)` and is mirrored to `QuestionVersion.source_question_order`;
 - `knowledge_point_id` remains a controlled searchable taxonomy choice. It is independent of source provenance and never supplies `source_topic_order` or `source_topic_label`;
-- `source_topic_order` and `source_topic_label` are explicit source-document specialty/section metadata captured at first creation. The current text-first parser cannot reliably infer these business semantics, so the annotator must supply them through an explicit workbench metadata action/request; the service must not fabricate them from taxonomy name/default order;
+- `source_topic_order` and `source_topic_label` are explicit source-document source-topic metadata captured at first creation. The current text-first parser cannot reliably infer these business semantics, so the annotator must supply them through an explicit workbench metadata action/request; the service must not fabricate them from taxonomy name/default order;
 - `AnnotationPackageQuestion` is authoritative package membership/order; legacy question fields remain populated for existing list and domain compatibility;
 - changing knowledge point on a draft changes only the controlled taxonomy value; it never rewrites or reallocates the source-topic snapshot or `source_question_order`;
+- save-and-next inheritance is a convenience default, not permanent provenance. After entering the next question, an assigned annotator may explicitly correct `source_topic_order` and/or `source_topic_label` when its actual source-document section differs. That correction does not change `knowledge_point_id`, invokes no parser/semantic inference, and requires no save-and-next pre-dialog;
+- source-topic correction is the only G-09 operation that recalculates `source_question_order`. It requires an `in_progress` package, the assigned annotator, and a mutable current draft; a completed package must first be explicitly reopened. For each affected source-topic snapshot, questions are ordered by immutable `global_order` and numbered contiguously from 1. Moving one question recalculates both its old and new snapshot groups; client input never supplies `source_question_order`;
+- a correction locks the package and the old/new source-topic memberships in `global_order`, validates both the expected package and target-question row versions, increments `package.row_version` and the target draft row version, and increments every affected current draft row version whose local order changes. Its committed response returns the new package token and every affected ordering row so clients can replace those rows or refetch the package question list; no client may retain a stale package token after the correction;
 - physical deletion/reordering is not part of this slice.
 
-Database uniqueness on package/global order, package/question, and package/source-topic/source-question order is the final duplicate guard. Browse/read calls never allocate a question or idempotency row.
+Database uniqueness on package/global order, package/question, and package/source-topic/source-question order is the final duplicate guard. The source-topic-local uniqueness covers both source-topic metadata fields and is deferrable during one correction transaction, so a legal contiguous renumbering cannot transiently violate it. Browse/read calls never allocate a question or idempotency row.
 
 ## 13. Shenlun Four-field Contract
 
@@ -329,7 +332,8 @@ All routes are under `/api/v1`, use JSON unless import is multipart, and use the
 | `POST /annotation-packages/{package_id}/questions` | `{client_request_id, expected_package_row_version, knowledge_point_id, source_topic_order, source_topic_label}` | `201 QuestionDraft`; creates first or explicit tail question only; first creation atomically transitions to `in_progress` |
 | `GET /annotation-packages/{package_id}/questions` | cursor, limit, optional knowledge point | `200 PackageQuestionList`, ordered only over existing questions |
 | `GET /annotation-packages/{package_id}/questions/{question_id}` | none | `200 QuestionDraft`; no pointer mutation |
-| `PATCH /annotation-packages/{package_id}/question-versions/{version_id}` | `{client_request_id, expected_row_version, fields?, knowledge_point_id?}` | `200 QuestionDraft`; autosave/manual save |
+| `PATCH /annotation-packages/{package_id}/question-versions/{version_id}` | `{client_request_id, expected_row_version, fields?, knowledge_point_id?}` | `200 QuestionDraft`; autosave/manual save; source-topic fields are rejected here and do not change the package token |
+| `PATCH /annotation-packages/{package_id}/question-versions/{version_id}/source-topic` | `{client_request_id, expected_package_row_version, expected_row_version, source_topic_order, source_topic_label}` | `200 SourceTopicCorrectionResult {updated_question, affected_questions[], package_row_version}`; assigned annotator's explicit metadata correction and server-side source-topic-local renumbering only |
 | `POST /annotation-packages/{package_id}/question-versions/{version_id}/source-actions` | `{client_request_id, expected_row_version, target_field, mode, replace_confirmed, selections:[{processing_result_id, document_block_id}]}` | `200 QuestionDraft` with current provenance |
 | `POST /annotation-packages/{package_id}/question-versions/{version_id}/save-and-next` | `{client_request_id, expected_package_row_version, expected_row_version, fields?}` | `200 SaveAndNextResult {saved_question, next_question, created_next}`; next inherits current knowledge point |
 | `GET /annotation-packages/{package_id}/annotation/resume` | none | `200 AnnotationResume`; no mutation |
@@ -364,7 +368,7 @@ Existing generic question endpoints remain backward-compatible for non-package q
 
 The IDs support selection/provenance but the UI displays human labels/order, not technical IDs. A gap is an item in source order; it is never silently omitted or represented as recovered text. Blocks and gaps are merged deterministically by `(source_order, item_kind_rank, item_id)`, where `gap` has rank 0 and `block` rank 1; the cursor encodes this full triple. This guarantees deterministic pagination with no skipped/duplicated same-order gaps or blocks. The gap's safe before/after block-order anchors remain available to the UI. Only an allow-listed `display_code` and localized generic message cross the boundary. Current G-08 parsing has reliable paragraph order but no page geometry, so `position_kind=document_order` and `source_order` are the only locator. A page number/coordinates may be added only by a later parser contract that can prove them.
 
-`QuestionDraft` returns `question_id`, `question_version_id`, `version_number`, `row_version`, current `package_row_version`, `status=draft`, `global_order`, `knowledge_point_id`, `source_question_order`, `source_topic_order`, `source_topic_label`, the four strings separately, and `field_provenance` keyed by the four field names. A field provenance value contains nullable head revision ID and ordered links with `processing_result_id`, `document_block_id`, `source_role`, `source_order`, and `is_current_active_result`. `FieldProvenanceHistory` returns immutable revisions and the same exact link evidence, scoped to the package creator/assigned annotator (or trusted management policy), so a later active-result change never makes historical evidence uninspectable.
+`QuestionDraft` returns `question_id`, `question_version_id`, `version_number`, `row_version`, current `package_row_version`, `status=draft`, `global_order`, `knowledge_point_id`, `source_question_order`, `source_topic_order`, `source_topic_label`, the four strings separately, and `field_provenance` keyed by the four field names. `SourceTopicCorrectionResult.updated_question` is the target's committed `QuestionDraft`; `affected_questions[]` contains the question/version IDs, current draft row versions, `global_order`, source-topic metadata, and recomputed `source_question_order` for every changed ordering row; `package_row_version` is the only package token clients may use afterward. A field provenance value contains nullable head revision ID and ordered links with `processing_result_id`, `document_block_id`, `source_role`, `source_order`, and `is_current_active_result`. `FieldProvenanceHistory` returns immutable revisions and the same exact link evidence, scoped to the package creator/assigned annotator (or trusted management policy), so a later active-result change never makes historical evidence uninspectable.
 
 `AnnotationResume` contains `PackageDetail`, nullable `current_question: QuestionDraft`, `workspace: {source_view, row_version}`, and `read_only`. `PackageQuestionList` items contain only safe navigation metadata plus persisted completeness booleans; it never returns an invented/unstarted position. Cursor ordering is `(global_order, question_id)`. `PackageTaskList` items contain `package_id`, safe display metadata, assignment relationship (`assigned`/`created`), annotation status, readiness, created-question count, last safe update timestamp, and pagination cursor; it contains no source text, answer, parser, or storage data.
 
@@ -380,7 +384,7 @@ All errors use `{code, message, field_errors, request_id}` and generic safe mess
 | 404 | `ANNOTATION_PACKAGE_NOT_FOUND`, `QUESTION_NOT_FOUND`, `SOURCE_RESULT_NOT_FOUND` | scoped resource absent; cross-package IDs use the same not-found behavior |
 | 409 | `IDEMPOTENCY_CONFLICT` | same actor/scope/request ID, different fingerprint |
 | 409 | `STALE_DRAFT`, `STALE_PACKAGE`, `STALE_WORKSPACE` | optimistic token mismatch; include safe current tokens |
-| 409 | `SOURCE_ORDER_CONFLICT`, `SPECIALTY_ORDER_CONFLICT` | uniqueness conflict after locking/race recovery |
+| 409 | `SOURCE_ORDER_CONFLICT`, `SOURCE_QUESTION_ORDER_CONFLICT` | uniqueness conflict after locking/race recovery |
 | 409 | `NON_EMPTY_OVERWRITE_FORBIDDEN` | ordinary fill targeted non-empty field |
 | 409 | `REPLACE_CONFIRMATION_REQUIRED` | replace lacked explicit confirmation |
 | 409 | `SOURCE_SELECTION_STALE` | selected result is no longer the role's active result |
@@ -401,9 +405,9 @@ A parser terminal `failed` result is a successful HTTP processing command with `
 
 ## 23. Idempotency
 
-Commands requiring `client_request_id` are import, package process, per-source process, result adoption, question create, save, source action, save-and-next, workspace preference update, complete, and reopen. GET open/resume/list/history reads do not use idempotency. Package process uses its request ID only to derive the two stable child IDs; it does not cache a separate aggregate 202 response, so later replay can truthfully observe children reaching terminal state.
+Commands requiring `client_request_id` are import, package process, per-source process, result adoption, question create, save, source action, source-topic correction, save-and-next, workspace preference update, complete, and reopen. GET open/resume/list/history reads do not use idempotency. Package process uses its request ID only to derive the two stable child IDs; it does not cache a separate aggregate 202 response, so later replay can truthfully observe children reaching terminal state.
 
-Each scope includes the aggregate/resource identity, for example `annotation_package.import`, `annotation_package.process:{id}`, `annotation_source.process:{source_id}`, `question.source_action:{version_id}`, and `annotation.complete:{package_id}`. Fingerprints include every semantic input and exclude server-derived text. A source action fingerprint includes ordered block IDs, exact result IDs, mode, field, confirmation, and expected row version.
+Each scope includes the aggregate/resource identity, for example `annotation_package.import`, `annotation_package.process:{id}`, `annotation_source.process:{source_id}`, `question.source_action:{version_id}`, `question.source_topic:{version_id}`, and `annotation.complete:{package_id}`. Fingerprints include every semantic input and exclude server-derived text. A source action fingerprint includes ordered block IDs, exact result IDs, mode, field, confirmation, and expected row version. A source-topic correction fingerprint includes the target source-topic metadata and both expected row-version tokens; identical retry returns the exact committed correction result without a second renumbering, while the same ID with a different fingerprint returns `IDEMPOTENCY_CONFLICT`.
 
 The implementation must strengthen the baseline lock-then-insert pattern against simultaneous first use: insert/reserve the unique key inside a SAVEPOINT, flush, and on unique violation reload/lock the winner and apply replay/conflict rules. No command may perform its domain mutation before it owns/resolves the idempotency key. For the existing Processing Service, its approved two-transaction admission/terminalization semantics remain authoritative.
 
@@ -411,7 +415,7 @@ Rejected validation/stale/warning-preview requests are not persisted as successf
 
 ## 24. Transaction / Locking Boundaries
 
-Lock order is deterministic to avoid deadlock: package → package-source associations in role order `question_paper`, `explanation` → their `PaperVersion` rows → active-processing selection rows in the same role order → package-question membership in global order → `Question` → current `QuestionVersion` → provenance head. Idempotency reservation occurs according to the approved command gate before domain derivation; locks then follow this order. There is no global table lock.
+Lock order is deterministic to avoid deadlock: package → package-source associations in role order `question_paper`, `explanation` → their `PaperVersion` rows → active-processing selection rows in the same role order → package-question membership in global order → `Question` → current `QuestionVersion` → provenance head. A source-topic correction locks the package, then all memberships in its old and new source-topic snapshots in `global_order`, followed by their Questions and current QuestionVersions in the same order. Idempotency reservation occurs according to the approved command gate before domain derivation; locks then follow this order. There is no global table lock.
 
 | Operation | Boundary and locks |
 |---|---|
@@ -420,6 +424,7 @@ Lock order is deterministic to avoid deadlock: package → package-source associ
 | adopt partial | existing activation transaction locks paper version, exact result, and active pointer; package/role ownership validated before delegation |
 | open/create | open is a readiness read only; create locks package and atomically creates question 1 plus `not_started -> in_progress`, or creates a tail question; uniqueness is final guard |
 | manual/autosave | one transaction; reserve idempotency, lock package then current version; compare question row version; mutate question and last-edited pointer without aggregate row-version churn |
+| source-topic correction | one transaction; reserve idempotency, lock package plus old/new source-topic snapshot memberships in global order, validate package/target tokens and mutable assigned-annotator scope, update target metadata, recompute both local sequences, update affected draft row versions, increment the package token, audit, and return every changed ordering row |
 | fill/append/replace | same save locks plus active pointer and provenance head; server reads immutable blocks; field, revision, links, head, pointer, audit commit atomically |
 | save-and-next | one transaction covering current save and existing-next selection or single next creation; no advancement outside commit |
 | complete | one transaction; lock package, both sources/PaperVersions/active rows in fixed role order, then all current memberships/versions in global order; recompute readiness/warnings, validate token, and transition without TOCTOU |
@@ -461,7 +466,7 @@ This is design only. Migration numbering is intentionally not assigned in this c
 - one source per `(package_id, source_role)` and one package binding per `paper_version_id` in V1;
 - source role check in `('question_paper','explanation')`;
 - package status check in `('not_started','in_progress','completed')`, positive row version, subject check `shenlun`, year range retained; non-null UUID `assigned_annotator_id` validation (the current backend has no user table to reference); no V1 reassignment mutation path;
-- unique package-question membership, `(package_id, global_order)`, and `(package_id, source_topic_order, source_question_order)`; positive orders and nonblank source-topic label;
+- unique package-question membership, `(package_id, global_order)`, and deferrable `(package_id, source_topic_order, source_topic_label, source_question_order)`; positive orders and nonblank source-topic label;
 - workspace PK `(package_id, actor_id)`, source view check in `('question_paper','explanation','compare')`, positive row version;
 - provenance field check over four exact fields; operation check `fill/append/replace/copy_forward`; positive revision/link/source order; unique `(question_version_id, field_name, revision_number)` and `(revision_id, link_order)`;
 - composite restrictive FKs prove package source → paper version → processing result → block; restrictive FKs prove provenance question/version and package membership;
@@ -512,7 +517,9 @@ No migration is authorized by this document.
 | 14 | autosave timeout retry with the same ID replays once; same ID/different payload conflicts |
 | 15 | save-and-next saves before advancing and is idempotent under double-click/retry |
 | 15a | save-and-next requires no next knowledge-point input and newly created next question inherits current knowledge point/source-topic snapshot |
-| 16 | concurrent next creation cannot duplicate global or specialty order |
+| 16 | concurrent next creation cannot duplicate `global_order` or source-topic-local `source_question_order` |
+| 16a | explicit source-topic correction leaves `knowledge_point_id` unchanged, recalculates old and new source-topic groups by `global_order`, and returns every affected row with new row versions/package token |
+| 16b | source-topic correction rejects stale package or target tokens, is idempotent on identical retry, conflicts on reused ID with changed metadata, and cannot run after completion until reopen |
 | 17 | GET, preview, list, navigation, and source-view reads do not change last-edited |
 | 18 | resume/open returns the last successfully edited persisted question, provenance, and caller source view; a not-started package returns no current question |
 | 19 | completion returns every question-order/missing-field hard error and does not transition |
@@ -536,11 +543,11 @@ Using synthetic pure-text DOCX fixtures only:
 2. process both; demonstrate failed blocks entry, then reprocess; demonstrate partial requires explicit adoption and visible gap marker;
 3. open a ready package workbench and confirm no question/status transition existed until “开始第1题”; create question 1 and confirm atomic `not_started -> in_progress`;
 4. switch `题本`/`解析`/`对照查看`; verify ordered content and human gap label without technical details;
-5. create question 1 with one of the five controlled specialties; fill the four fields using one and multiple blocks from either role;
+5. create question 1 with one of the five controlled knowledge points; fill the four fields using one and multiple blocks from either role;
 6. manually edit a filled field; confirm text persists and provenance remains;
 7. attempt ordinary fill over non-empty content and observe rejection; append once; explicitly confirm replace and inspect current versus historical provenance;
 8. simulate two tabs and a timeout: stale save is rejected, identical retry is replayed, and content is not duplicated;
-9. use save-and-next twice/double-click; confirm question 1 saves before one question 2 appears, question 2 inherits question 1 knowledge point, and ordering remains unique;
+9. use save-and-next twice/double-click; confirm question 1 saves before one question 2 appears and question 2 inherits question 1 knowledge point/source-topic metadata; then explicitly correct question 2's source-topic metadata, confirm its knowledge point is unchanged, old/new source-topic groups are renumbered by `global_order`, and the returned package token/affected rows replace stale client state;
 10. browse other questions without editing, leave, then resume; confirm return to last edited question, saved values/provenance, and last source view;
 11. attempt completion with a missing field; observe question-order/field error; fill it, observe soft warnings, explicitly confirm under locked active selections, reach completed, and return to the task list without automatic next-package opening;
 12. verify all editing paths are read-only, then explicitly reopen and edit again;

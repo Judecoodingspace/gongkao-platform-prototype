@@ -301,13 +301,35 @@ confirm
 
 完成后返回题本／资料包任务列表；用户自行选择下一套资料，不自动进入下一套。
 
-## PD-30 — 未开始与进行中的创建边界
+## PD-30 — Package creator and annotator may differ
 
-打开已 ready 的 workbench 不改变题本级拆题状态。只有成功创建第 1 题时，系统才原子地从 `未开始` 进入 `进行中`。因此 `未开始` 不含任何已创建题目，`进行中` 必含至少一道已创建题目。
+V1 允许：
 
-## PD-31 — 完成后的任务列表去向
+```text
+导入者 / 管理员创建资料包
+→ 将资料包交给另一名 annotator
+→ annotator 执行拆题
+```
 
-完成本卷确认成功后，系统返回题本／资料包任务列表。用户可在列表中选择下一套资料；本轮不自动打开、分配或切换下一套资料。
+因此：
+
+```text
+package creator != necessarily assigned annotator
+```
+
+package creator 与 assigned annotator 可以是不同 actor；annotation mutations 由 assigned annotator 执行；creator / management side 可以执行本切片允许的导入和 processing management。本轮不声明正式 RBAC 已完成，不增加多人实时协作、抢单或复杂 reassignment workflow。assignment 的具体技术实现由 Implementation Contract 决定，但不得恢复 creator-only annotation。
+
+## PD-31 — Save-and-next inherits current knowledge point
+
+用户执行 `保存并录下一题` 时：
+
+```text
+next_question.knowledge_point_id
+=
+current_question.knowledge_point_id
+```
+
+不要求用户在 save-and-next 之前重新选择专项。下一题创建并进入后，annotator 可以显式修改 `knowledge_point_id`。因此 `next_knowledge_point_id` 不得作为 save-and-next 的必填输入。
 
 ## Continuing invariants
 
