@@ -1,7 +1,8 @@
 # WDV1 G-09 Pure-Text Question Annotation E2E Implementation Contract
 
 ```text
-CONTRACT_STATUS = DRAFT — PENDING TEAM B REVIEW
+CONTRACT_STATUS = CORRECTIVE REVISION 3 — PENDING TEAM B NARROW REVIEW
+CONTRACT_REVISION = 3
 IMPLEMENTATION_AUTHORIZED = NO
 IMPLEMENTATION_PLAN_AUTHORIZED = NO
 DATABASE_MIGRATION_AUTHORIZED = NO
@@ -116,7 +117,7 @@ Import external-resource sequence is fixed:
 2. allocate both `PaperVersion` IDs and promote both staged objects to private final locations;
 3. in one database transaction insert package, two papers, two finalized versions, two source-role rows, idempotency, and safe audit records;
 4. on promotion or transaction failure, compensate every object promoted by this command and persist no partial package;
-5. a replay with the same actor/scope/request ID and fingerprint returns the same package; a different fingerprint is `IDEMPOTENCY_CONFLICT`.
+5. a replay with the same actor/scope/request ID and fingerprint resolves the same package identity and returns its current safe `PackageDetail` without creating another package; a different fingerprint is `IDEMPOTENCY_CONFLICT`.
 
 No storage URI, hash, filename-derived private path, or document content appears in the package response or audit details. Existing G-07 immutability and provenance remain intact because the package only adds restrictive references.
 
@@ -180,7 +181,8 @@ Ordering rules:
 - changing knowledge point on a draft changes only the controlled taxonomy value; it never rewrites or reallocates the source-topic snapshot or `source_question_order`;
 - save-and-next inheritance is a convenience default, not permanent provenance. After entering the next question, an assigned annotator may explicitly correct `source_topic_order` and/or `source_topic_label` when its actual source-document section differs. That correction does not change `knowledge_point_id`, invokes no parser/semantic inference, and requires no save-and-next pre-dialog;
 - source-topic correction is the only G-09 operation that recalculates `source_question_order`. It requires an `in_progress` package, the assigned annotator, and a mutable current draft; a completed package must first be explicitly reopened. For each affected source-topic snapshot, questions are ordered by immutable `global_order` and numbered contiguously from 1. Moving one question recalculates both its old and new snapshot groups; client input never supplies `source_question_order`;
-- a correction locks the package and the old/new source-topic memberships in `global_order`, validates both the expected package and target-question row versions, increments `package.row_version` and the target draft row version, and increments every affected current draft row version whose local order changes. Its committed response returns the new package token and every affected ordering row so clients can replace those rows or refetch the package question list; no client may retain a stale package token after the correction;
+- on first successful execution, a correction locks the package and the old/new source-topic memberships in `global_order`, validates both the expected package and target-question row versions, increments `package.row_version` and the target draft row version, and increments every affected current draft row version whose local order changes. That first response returns the new package token and every ordering row changed by the transaction;
+- an idempotent replay never enters the reorder transaction again. It resolves the already-won command through the existing idempotency record, returns the target draft and package token as current authoritative representations, returns `affected_questions = null`, and sets `ordering_refresh_required = true`; the client then refetches the package question list without asking the user to repeat or reconfirm the correction;
 - physical deletion/reordering is not part of this slice.
 
 Database uniqueness on package/global order, package/question, and package/source-topic/source-question order is the final duplicate guard. The source-topic-local uniqueness covers both source-topic metadata fields and is deferrable during one correction transaction, so a legal contiguous renumbering cannot transiently violate it. Browse/read calls never allocate a question or idempotency row.
@@ -238,7 +240,7 @@ The source action request contains `mode`, `target_field`, selected exact blocks
 
 Selected text is the exact `text_original` of ordered blocks joined by one LF. It is never derived from client-supplied source text. An empty selection or a block from a failed, inactive, wrong-role, wrong-package, or no-longer-active result is rejected.
 
-The transaction validates `expected_row_version` before reading/writing text. A successful action increments question `row_version`, updates `updated_at` and the last-edited pointer under the package lock, and appends safe audit metadata containing IDs, field, mode, counts, and before/after hashes only. It does **not** increment package `row_version`: ordinary content/provenance saves are question-version concurrency operations. Stale commands mutate nothing. Exact duplicate requests replay the recorded result; same request ID/different fingerprint conflicts. Timeout retry therefore cannot append twice. Concurrent editors race on row version; one succeeds and the other receives the current safe representation with `STALE_DRAFT`.
+The transaction validates `expected_row_version` before reading/writing text. A successful action increments question `row_version`, updates `updated_at` and the last-edited pointer under the package lock, and appends safe audit metadata containing IDs, field, mode, counts, and before/after hashes only. It does **not** increment package `row_version`: ordinary content/provenance saves are question-version concurrency operations. Stale commands mutate nothing. An identical replay does not apply fill/append/replace again and may return the current safe question representation; same request ID/different fingerprint conflicts. Timeout retry therefore cannot append twice. Concurrent editors race on row version; one succeeds and the other receives the current safe representation with `STALE_DRAFT`.
 
 ## 16. Autosave / Manual Save / Concurrency
 
@@ -255,7 +257,7 @@ Frontend state is explicitly separate:
 
 Only one autosave per question may be in flight in one client. Later keystrokes remain dirty and are sent after the first response with its returned row version. The client must never retry a timed-out request with a new request ID; it retries the identical command ID/fingerprint. A 409 stale response is not auto-merged or overwritten: refresh/compare/reapply is required.
 
-Successful content or knowledge-point mutation updates the package's last-edited pointer under the package lock but does not increment package `row_version`. An idempotent replay returns the already persisted question row version and does not increment again. GET, navigation, source-tab viewing, preview, and list operations never change the pointer. A source-view preference update changes only workspace preference and does not count as question editing. Every `QuestionDraft` response also includes the current `package_row_version`; every aggregate mutation that changes that token returns the new token, so there is no package-token black hole.
+Successful content or knowledge-point mutation updates the package's last-edited pointer under the package lock but does not increment package `row_version`. An idempotent replay returns the current safe question representation and does not increment any row version again. GET, navigation, source-tab viewing, preview, and list operations never change the pointer. A source-view preference update changes only workspace preference and does not count as question editing. Every `QuestionDraft` response also includes the current `package_row_version`; every aggregate mutation that changes that token returns the new token, so there is no package-token black hole.
 
 The backend does not persist browser `dirty` or `save_failed`; therefore there is no server-known unsaved flag in V1. Navigation/unload guards and the three choices in FD-23 are frontend responsibilities based on client state. Completion UI must not issue the command while locally dirty or failed; the completion transaction still validates server truth.
 
@@ -272,7 +274,7 @@ The backend does not persist browser `dirty` or `save_failed`; therefore there i
 7. write audit/idempotency, flush all uniqueness constraints, increment `package.row_version` only if a next question was created, and commit; every `SaveAndNextResult` returns the committed package token;
 8. only after the 200 response may the client switch the working target.
 
-After entering the next question, the annotator may explicitly change its controlled `knowledge_point_id`; that later change never rewrites source-topic provenance. If save validation or commit fails, creation and advancement roll back. Double-click and timeout retry replay the same next-question ID. A concurrent different command is serialized by the package row lock; uniqueness is the final guard. If a conflicting next question was legally created by the winner, the loser receives `STALE_PACKAGE`/`STALE_DRAFT`, not another question.
+After entering the next question, the annotator may explicitly change its controlled `knowledge_point_id`; that later change never rewrites source-topic provenance. If save validation or commit fails, creation and advancement roll back. Double-click and timeout retry resolve the same originally selected/created next-question identity and never create another next question; returned DTOs may reflect later legal state. A concurrent different command is serialized by the package row lock; uniqueness is the final guard. If a conflicting next question was legally created by the winner, the loser receives `STALE_PACKAGE`/`STALE_DRAFT`, not another question.
 
 ## 18. Resume / Last-edited Semantics
 
@@ -314,7 +316,7 @@ All routes are under `/api/v1`, use JSON unless import is multipart, and use the
 
 | Method and route | Request | Success |
 |---|---|---|
-| `POST /annotation-packages` | multipart: `client_request_id`, title/year/region/subject/exam_type, `assigned_annotator_id`, `question_paper`, `explanation` | `201 PackageDetail`; exact replay `200` + `Idempotent-Replay: true` |
+| `POST /annotation-packages` | multipart: `client_request_id`, title/year/region/subject/exam_type, `assigned_annotator_id`, `question_paper`, `explanation` | `201 PackageDetail`; replay resolves the same package ID, returns current safe `PackageDetail`, and uses `200` + `Idempotent-Replay: true` |
 | `GET /annotation-packages` | `scope=assigned|created`, optional annotation/readiness status, cursor, limit | `200 PackageTaskList`; only packages assigned to or created/managed by caller; completion returns here |
 | `GET /annotation-packages/{package_id}` | none | `200 PackageDetail` including composed readiness and safe role summaries |
 | `POST /annotation-packages/{package_id}/processing` | `{client_request_id}` | `200 PackageProcessingOutcome` when both terminal; `202` if either child is accepted/in progress; always includes two safe role summaries |
@@ -333,7 +335,7 @@ All routes are under `/api/v1`, use JSON unless import is multipart, and use the
 | `GET /annotation-packages/{package_id}/questions` | cursor, limit, optional knowledge point | `200 PackageQuestionList`, ordered only over existing questions |
 | `GET /annotation-packages/{package_id}/questions/{question_id}` | none | `200 QuestionDraft`; no pointer mutation |
 | `PATCH /annotation-packages/{package_id}/question-versions/{version_id}` | `{client_request_id, expected_row_version, fields?, knowledge_point_id?}` | `200 QuestionDraft`; autosave/manual save; source-topic fields are rejected here and do not change the package token |
-| `PATCH /annotation-packages/{package_id}/question-versions/{version_id}/source-topic` | `{client_request_id, expected_package_row_version, expected_row_version, source_topic_order, source_topic_label}` | `200 SourceTopicCorrectionResult {updated_question, affected_questions[], package_row_version}`; assigned annotator's explicit metadata correction and server-side source-topic-local renumbering only |
+| `PATCH /annotation-packages/{package_id}/question-versions/{version_id}/source-topic` | `{client_request_id, expected_package_row_version, expected_row_version, source_topic_order, source_topic_label}` | `200 SourceTopicCorrectionResult {updated_question, package_row_version, affected_questions: list[AffectedOrderingRow] | null, ordering_refresh_required}`; first success returns changed rows/`false`; replay returns current authoritative target/package state, `null`/`true`, and `Idempotent-Replay: true` without renumbering |
 | `POST /annotation-packages/{package_id}/question-versions/{version_id}/source-actions` | `{client_request_id, expected_row_version, target_field, mode, replace_confirmed, selections:[{processing_result_id, document_block_id}]}` | `200 QuestionDraft` with current provenance |
 | `POST /annotation-packages/{package_id}/question-versions/{version_id}/save-and-next` | `{client_request_id, expected_package_row_version, expected_row_version, fields?}` | `200 SaveAndNextResult {saved_question, next_question, created_next}`; next inherits current knowledge point |
 | `GET /annotation-packages/{package_id}/annotation/resume` | none | `200 AnnotationResume`; no mutation |
@@ -368,7 +370,11 @@ Existing generic question endpoints remain backward-compatible for non-package q
 
 The IDs support selection/provenance but the UI displays human labels/order, not technical IDs. A gap is an item in source order; it is never silently omitted or represented as recovered text. Blocks and gaps are merged deterministically by `(source_order, item_kind_rank, item_id)`, where `gap` has rank 0 and `block` rank 1; the cursor encodes this full triple. This guarantees deterministic pagination with no skipped/duplicated same-order gaps or blocks. The gap's safe before/after block-order anchors remain available to the UI. Only an allow-listed `display_code` and localized generic message cross the boundary. Current G-08 parsing has reliable paragraph order but no page geometry, so `position_kind=document_order` and `source_order` are the only locator. A page number/coordinates may be added only by a later parser contract that can prove them.
 
-`QuestionDraft` returns `question_id`, `question_version_id`, `version_number`, `row_version`, current `package_row_version`, `status=draft`, `global_order`, `knowledge_point_id`, `source_question_order`, `source_topic_order`, `source_topic_label`, the four strings separately, and `field_provenance` keyed by the four field names. `SourceTopicCorrectionResult.updated_question` is the target's committed `QuestionDraft`; `affected_questions[]` contains the question/version IDs, current draft row versions, `global_order`, source-topic metadata, and recomputed `source_question_order` for every changed ordering row; `package_row_version` is the only package token clients may use afterward. A field provenance value contains nullable head revision ID and ordered links with `processing_result_id`, `document_block_id`, `source_role`, `source_order`, and `is_current_active_result`. `FieldProvenanceHistory` returns immutable revisions and the same exact link evidence, scoped to the package creator/assigned annotator (or trusted management policy), so a later active-result change never makes historical evidence uninspectable.
+`QuestionDraft` returns `question_id`, `question_version_id`, `version_number`, `row_version`, current `package_row_version`, `status=draft`, `global_order`, `knowledge_point_id`, `source_question_order`, `source_topic_order`, `source_topic_label`, the four strings separately, and `field_provenance` keyed by the four field names.
+
+`SourceTopicCorrectionResult` contains `updated_question`, `package_row_version`, nullable `affected_questions`, and `ordering_refresh_required`. On first successful execution, `Idempotent-Replay` is absent or false, `updated_question` is the committed target `QuestionDraft`, `package_row_version` is the committed aggregate token, `affected_questions` contains the question/version IDs, committed draft row versions, `global_order`, source-topic metadata, and recomputed `source_question_order` for every row changed by that transaction, and `ordering_refresh_required=false`. On an identical replay, the response carries `Idempotent-Replay: true`; `updated_question` and `package_row_version` are current authoritative representations, `affected_questions=null`, and `ordering_refresh_required=true`. The server must not guess historical affected rows, rerun ordering to reconstruct them, or derive a fake historical result from current group membership. When refresh is required, the client issues `GET /annotation-packages/{package_id}/questions` and replaces its ordering state; this is technical recovery after retry, not a new user confirmation or a repeated correction.
+
+A field provenance value contains nullable head revision ID and ordered links with `processing_result_id`, `document_block_id`, `source_role`, `source_order`, and `is_current_active_result`. `FieldProvenanceHistory` returns immutable revisions and the same exact link evidence, scoped to the package creator/assigned annotator (or trusted management policy), so a later active-result change never makes historical evidence uninspectable.
 
 `AnnotationResume` contains `PackageDetail`, nullable `current_question: QuestionDraft`, `workspace: {source_view, row_version}`, and `read_only`. `PackageQuestionList` items contain only safe navigation metadata plus persisted completeness booleans; it never returns an invented/unstarted position. Cursor ordering is `(global_order, question_id)`. `PackageTaskList` items contain `package_id`, safe display metadata, assignment relationship (`assigned`/`created`), annotation status, readiness, created-question count, last safe update timestamp, and pagination cursor; it contains no source text, answer, parser, or storage data.
 
@@ -407,11 +413,17 @@ A parser terminal `failed` result is a successful HTTP processing command with `
 
 Commands requiring `client_request_id` are import, package process, per-source process, result adoption, question create, save, source action, source-topic correction, save-and-next, workspace preference update, complete, and reopen. GET open/resume/list/history reads do not use idempotency. Package process uses its request ID only to derive the two stable child IDs; it does not cache a separate aggregate 202 response, so later replay can truthfully observe children reaching terminal state.
 
-Each scope includes the aggregate/resource identity, for example `annotation_package.import`, `annotation_package.process:{id}`, `annotation_source.process:{source_id}`, `question.source_action:{version_id}`, `question.source_topic:{version_id}`, and `annotation.complete:{package_id}`. Fingerprints include every semantic input and exclude server-derived text. A source action fingerprint includes ordered block IDs, exact result IDs, mode, field, confirmation, and expected row version. A source-topic correction fingerprint includes the target source-topic metadata and both expected row-version tokens; identical retry returns the exact committed correction result without a second renumbering, while the same ID with a different fingerprint returns `IDEMPOTENCY_CONFLICT`.
+G-09 idempotency is **effect idempotency**, not permanent historical HTTP-response snapshot storage. Given the same actor, operation scope, `client_request_id`, and fingerprint, the business mutation must not execute again. A replay must therefore never repeat append/replace, renumber a source-topic group, create another next question or package, increment a row version because of replay, or perform completion/reopen twice. If the fingerprint differs, the command returns `IDEMPOTENCY_CONFLICT`.
+
+The existing `idempotency_keys` record proves that one semantic command won and committed. On replay, the service resolves its stable primary identity through `result_resource_type`/`result_resource_id`, returns that resource or aggregate's current safe authoritative representation, and sets `Idempotent-Replay: true`. It does not promise byte-for-byte reproduction of the original historical HTTP body after later legal mutations. Effect identity remains stable where required: import resolves the same `package_id`; question create resolves the same question/version identity; save-and-next resolves the originally selected/created next-question identity; source action cannot append or replace twice; completion/reopen cannot transition twice or force current state back to a historical state.
+
+Each scope includes the aggregate/resource identity, for example `annotation_package.import`, `annotation_package.process:{id}`, `annotation_source.process:{source_id}`, `question.source_action:{version_id}`, `question.source_topic:{version_id}`, and `annotation.complete:{package_id}`. Fingerprints include every semantic input and exclude server-derived text. A source action fingerprint includes ordered block IDs, exact result IDs, mode, field, confirmation, and expected row version. A source-topic correction fingerprint includes the target source-topic metadata and both expected row-version tokens. Its replay returns the current target/package representations with `affected_questions=null` and `ordering_refresh_required=true`; it never renumbers again.
 
 The implementation must strengthen the baseline lock-then-insert pattern against simultaneous first use: insert/reserve the unique key inside a SAVEPOINT, flush, and on unique violation reload/lock the winner and apply replay/conflict rules. No command may perform its domain mutation before it owns/resolves the idempotency key. For the existing Processing Service, its approved two-transaction admission/terminalization semantics remain authoritative.
 
 Rejected validation/stale/warning-preview requests are not persisted as successful idempotency results. Retrying a timed-out potentially successful command uses the same ID and identical fingerprint. A user-confirmed completion uses a new request ID because it is a different command from the warning preview.
+
+No immutable command-response receipt table, response JSON column, affected-question snapshot column, or event-store replay snapshot is added. `idempotency_keys` must not store source text, answers, document bytes, full/partial HTTP response bodies, affected-question JSON, storage URI, private path, parser output, or traceback. Fingerprints contain only safe semantic inputs, opaque IDs, and concurrency tokens. The existing approved `ProcessingService` trigger, activation, result replay, and two-transaction semantics are explicitly exempt from redesign and remain unchanged.
 
 ## 24. Transaction / Locking Boundaries
 
@@ -424,7 +436,7 @@ Lock order is deterministic to avoid deadlock: package → package-source associ
 | adopt partial | existing activation transaction locks paper version, exact result, and active pointer; package/role ownership validated before delegation |
 | open/create | open is a readiness read only; create locks package and atomically creates question 1 plus `not_started -> in_progress`, or creates a tail question; uniqueness is final guard |
 | manual/autosave | one transaction; reserve idempotency, lock package then current version; compare question row version; mutate question and last-edited pointer without aggregate row-version churn |
-| source-topic correction | one transaction; reserve idempotency, lock package plus old/new source-topic snapshot memberships in global order, validate package/target tokens and mutable assigned-annotator scope, update target metadata, recompute both local sequences, update affected draft row versions, increment the package token, audit, and return every changed ordering row |
+| source-topic correction | replay gate first: an identical winner exits without package/group locks or mutation and returns current target/package state with refresh required; first execution uses one transaction to reserve idempotency, lock package plus old/new source-topic snapshot memberships in global order, validate package/target tokens and mutable assigned-annotator scope, update target metadata, recompute both local sequences, update affected draft row versions, increment the package token, audit, and return every changed ordering row |
 | fill/append/replace | same save locks plus active pointer and provenance head; server reads immutable blocks; field, revision, links, head, pointer, audit commit atomically |
 | save-and-next | one transaction covering current save and existing-next selection or single next creation; no advancement outside commit |
 | complete | one transaction; lock package, both sources/PaperVersions/active rows in fixed role order, then all current memberships/versions in global order; recompute readiness/warnings, validate token, and transition without TOCTOU |
@@ -489,7 +501,7 @@ No migration is authorized by this document.
 
 - Treat both DOCX files as untrusted ZIP/XML. Reuse size/type/archive validation, never execute macros/active content, and never follow external document relationships or network fetches.
 - Store bytes only in private source storage. Do not expose storage URI, private path, verified hash, OOXML, parser config/fingerprint, diagnostic metadata, credentials, or traceback.
-- Source block text and answers are permitted only in authenticated, package-scoped content/question response bodies. They are prohibited from application logs, audit details, idempotency payload storage, metrics labels, Git, issue comments, screenshots, and fixtures.
+- Source block text and answers are permitted only in authenticated, package-scoped content/question response bodies. They are prohibited from application logs, audit details, idempotency payload/storage, command-response receipts, metrics labels, Git, issue comments, screenshots, and fixtures. Idempotency storage also excludes document bytes, HTTP response bodies, affected-question JSON, storage URI, private path, parser output, and traceback.
 - Audit stores IDs, safe codes, counts, state transitions, field names, and hashes only.
 - Error responses are allow-listed and generic. Cross-package resource probing returns scoped not-found.
 - Test fixtures are synthetic and sanitized. No real paper, answer, source path, parser output, database dump, or credential is committed.
@@ -518,8 +530,10 @@ No migration is authorized by this document.
 | 15 | save-and-next saves before advancing and is idempotent under double-click/retry |
 | 15a | save-and-next requires no next knowledge-point input and newly created next question inherits current knowledge point/source-topic snapshot |
 | 16 | concurrent next creation cannot duplicate `global_order` or source-topic-local `source_question_order` |
-| 16a | explicit source-topic correction leaves `knowledge_point_id` unchanged, recalculates old and new source-topic groups by `global_order`, and returns every affected row with new row versions/package token |
-| 16b | source-topic correction rejects stale package or target tokens, is idempotent on identical retry, conflicts on reused ID with changed metadata, and cannot run after completion until reopen |
+| 16a | first successful source-topic correction leaves `knowledge_point_id` unchanged, recalculates old and new source-topic groups by `global_order`, returns every affected row with committed row versions/package token, and sets `ordering_refresh_required=false` |
+| 16b | an immediate identical retry returns `Idempotent-Replay: true`, performs no second reorder, increments no question/package row version, returns current authoritative target/package state, `affected_questions=null`, and `ordering_refresh_required=true`; changed metadata under the same request ID conflicts |
+| 16c | after a later unrelated legal mutation, retrying the original correction still performs no mutation, returns `Idempotent-Replay: true`, and truthfully returns current target/package tokens with `affected_questions=null` and `ordering_refresh_required=true`; client question-list refetch recovers current ordering |
+| 16d | replay safety uses existing `idempotency_keys` without any command-response receipt table, response JSON column, affected-row snapshot, or reconstructed historical response |
 | 17 | GET, preview, list, navigation, and source-view reads do not change last-edited |
 | 18 | resume/open returns the last successfully edited persisted question, provenance, and caller source view; a not-started package returns no current question |
 | 19 | completion returns every question-order/missing-field hard error and does not transition |
@@ -530,6 +544,7 @@ No migration is authorized by this document.
 | 23a | completed response/task-list route returns only scoped package tasks and never auto-opens the next package |
 | 24 | G-09 creates no submit/review/approve/reject/publish entity or transition |
 | 25 | log/audit/error/fixture capture contains no source text, answers, paths, hashes, or secrets |
+| 25a | idempotency records/fingerprints contain no source text, answers, document bytes, HTTP response body, affected-row JSON, storage/private path, parser output, or traceback |
 | 26 | additive PostgreSQL 16 migration proves composite FKs, uniqueness, append-only history, and RESTRICT deletion |
 | 27 | every existing Processing Service test and response/idempotency/activation behavior remains valid |
 
@@ -547,7 +562,7 @@ Using synthetic pure-text DOCX fixtures only:
 6. manually edit a filled field; confirm text persists and provenance remains;
 7. attempt ordinary fill over non-empty content and observe rejection; append once; explicitly confirm replace and inspect current versus historical provenance;
 8. simulate two tabs and a timeout: stale save is rejected, identical retry is replayed, and content is not duplicated;
-9. use save-and-next twice/double-click; confirm question 1 saves before one question 2 appears and question 2 inherits question 1 knowledge point/source-topic metadata; then explicitly correct question 2's source-topic metadata, confirm its knowledge point is unchanged, old/new source-topic groups are renumbered by `global_order`, and the returned package token/affected rows replace stale client state;
+9. use save-and-next twice/double-click; confirm question 1 saves before one question 2 appears and question 2 inherits question 1 knowledge point/source-topic metadata; then perform a source-topic correction, confirm its knowledge point is unchanged and its old/new source-topic groups are renumbered by `global_order`, and record the returned package/question tokens and affected rows; perform another legal mutation, retry the original correction with the same request ID/payload, confirm no reorder or row-version increment runs again and `Idempotent-Replay: true`, confirm current authoritative target/package tokens with `affected_questions=null` and `ordering_refresh_required=true`, then refetch the question list and recover current ordering state;
 10. browse other questions without editing, leave, then resume; confirm return to last edited question, saved values/provenance, and last source view;
 11. attempt completion with a missing field; observe question-order/field error; fill it, observe soft warnings, explicitly confirm under locked active selections, reach completed, and return to the task list without automatic next-package opening;
 12. verify all editing paths are read-only, then explicitly reopen and edit again;
@@ -559,13 +574,13 @@ Reviewer workflow, submit, approval/rejection, release/publication, searchable o
 
 ## 31. Stop Conditions
 
-Implementation planning or work must stop and return `PRODUCT_DECISION_REQUIRED` / `CONTRACT_STATUS = BLOCKED_PENDING_PRODUCT_DECISION` if a discovered issue would change what users see, can do, or when they can do it; allow different overwrite/delete behavior; redefine completion/reopen; or alter annotation workflow. It must also stop for baseline drift, a dirty out-of-scope worktree, any need to mutate M-001–M-006 history, inability to preserve exact source/result/block provenance, pressure to auto-activate partial or activate failed, private-data leakage, or a requirement for background processing.
+Implementation planning or work must stop and return `PRODUCT_DECISION_REQUIRED` / `CONTRACT_STATUS = BLOCKED_PENDING_PRODUCT_DECISION` if a discovered issue would change what users see, can do, or when they can do it; allow different overwrite/delete behavior; redefine completion/reopen; or alter annotation workflow. It must also stop for baseline drift, a dirty out-of-scope worktree, any need to mutate M-001–M-006 history, inability to preserve exact source/result/block provenance, pressure to auto-activate partial or activate failed, private-data leakage, a requirement for background processing, pressure to add response-snapshot/receipt persistence without a new formal technical review, or an attempt to rerun a mutation/guess historical affected rows merely to reconstruct a replay body.
 
 Technical implementation uncertainty that stays within frozen behavior must return to Team B contract review; it must not be resolved by silent product invention.
 
 ## 32. Open Technical Decisions
 
-No technical decision is intentionally left open for plan generation. The contract fixes aggregate naming, role model, derived readiness, explicit partial adoption, API surface, ordering authority, copy-on-write provenance, concurrency tokens, idempotency race handling, locking order, schema decomposition, and safe source locator.
+No technical decision is intentionally left open for plan generation. The contract fixes aggregate naming, role model, derived readiness, explicit partial adoption, API surface, ordering authority, copy-on-write provenance, concurrency tokens, idempotency race handling, locking order, schema decomposition, safe source locator, and the Rev3 distinction between effect idempotency and historical response snapshot storage. Replay uses existing `idempotency_keys`, never reruns a won mutation, returns current safe authoritative representations, and adds no response-receipt schema.
 
 Implementation may choose internal Python class/function names and pagination encoding only if wire behavior, constraints, and invariants above remain exact.
 
@@ -579,7 +594,7 @@ The baseline inventory exposed no unresolved question that changes frozen user-v
 
 ```text
 PRODUCT_DECISION_REQUIRED_COUNT = 0
-CONTRACT_STATUS = DRAFT — PENDING TEAM B REVIEW
+CONTRACT_STATUS = CORRECTIVE REVISION 3 — PENDING TEAM B NARROW REVIEW
 IMPLEMENTATION_AUTHORIZED = NO
-NEXT_STAGE = TEAM B CONTRACT REVIEW
+NEXT_STAGE = TEAM B CONTRACT REV3 NARROW REVIEW
 ```
