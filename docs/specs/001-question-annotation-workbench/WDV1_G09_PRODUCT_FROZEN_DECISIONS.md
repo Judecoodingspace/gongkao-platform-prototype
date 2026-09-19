@@ -2,10 +2,13 @@
 
 ```text
 PRODUCT_DECISIONS = FROZEN
+AUTHORITY_CLARIFICATION = UNTOUCHED_NEXT_PLACEHOLDER_IS_NOT_A_QUESTION
 IMPLEMENTATION_AUTHORIZED = NO
 ```
 
 These decisions are the product authority for the WDV1 G-09 pure-text question-annotation end-to-end slice. They do not authorize an implementation plan, migration, backend or frontend implementation, or merge.
+
+This clarification records the already-frozen meaning of the untouched next editor shell; it introduces no new product decision.
 
 ## FD-01 — 本轮 E2E 目标
 
@@ -87,6 +90,8 @@ failed  → 处理失败 → 本版禁止进入拆题工作台 → 只能重新�
 ```
 
 V1 不提前识别总题数。进行中只显示 `已创建 X 道题`；完成后可显示 `共拆出 X 道题`。
+
+“已创建 X 道题”只统计 server 已 materialize / persisted 并进入 package membership 的真实题目。`保存并录下一题` 后展示、但尚未发生任何成功持久化实际编辑的 ephemeral next placeholder 不计数：5 道真实题加 1 个 untouched placeholder 仍显示 `已创建 5 道题`，不得显示 6。
 
 状态语义固定为：
 
@@ -200,14 +205,19 @@ Autosave 不是 last-write-wins；Contract 必须设计 concurrency semantics。
 
 ```text
 保存当前题成功
-→ 才进入/创建下一题
+→ 如果下一道真实题已存在，进入该题
+→ 如果当前题是 tail，进入“下一题空白编辑器 shell”
 ```
 
-必须处理 idempotency、double click、network retry、question ordering、duplicate next-question creation。
+tail shell 是 ephemeral frontend/editor state，不是已创建题目。在首次成功的真实持久化编辑发生前，server 不得创建 `Question`、`QuestionVersion`、`QuestionSlot` 或 `AnnotationPackageQuestion`；此时没有 question ID/version ID/membership，不增加 created-question count，也不得仅因进入 shell 而增加 `package.row_version`。
+
+首次成功的真实持久化编辑必须在一个原子 server transaction 中 materialize 恰好一道下一题并同时应用该编辑；失败则完整回滚，不留下持久化空白题。必须处理 idempotency、double click、network retry、question ordering 与 duplicate next-question materialization。
 
 ## FD-21 — Resume 以最后编辑为准
 
 重新进入进行中的资料 → 回到最后编辑题，不是最后浏览题。只浏览不得更新 work-progress pointer。
+
+若用户保存第 N 道真实题后进入 untouched next placeholder，并在没有任何成功持久化编辑的情况下退出，resume 必须回到第 N 题。Untouched placeholder 不成为 work-progress pointer；只有首次真实编辑成功并原子 materialize 下一题后，`last_edited` 才更新到该新题。
 
 ## FD-22 — Resume 内容
 
@@ -226,6 +236,8 @@ Contract 区分 server truth 与 frontend ephemeral state。
 每一道已创建的申论题都必须具有：题干、要求、问题、参考答案。
 
 缺任意字段 → 不允许完成，并能返回 `第X题：缺少Y`。
+
+Hard validation 只检查 server 已 materialize 的真实 package questions。Ephemeral placeholder 不存在于 server package membership，不产生 missing-field error 或 warning，也不阻塞 completed；若 placeholder 中只有尚未成功保存的本地 dirty content，继续适用 FD-23 的客户端离开/保存提示。
 
 ## FD-25 — Hard blockers vs soft warnings
 
@@ -324,17 +336,20 @@ package creator 与 assigned annotator 可以是不同 actor；annotation mutati
 用户执行 `保存并录下一题` 时：
 
 ```text
-next_question.knowledge_point_id
+next target default knowledge_point_id
 =
 current_question.knowledge_point_id
 ```
 
-不要求用户在 save-and-next 之前重新选择专项。下一题创建并进入后，annotator 可以显式修改 `knowledge_point_id`。因此 `next_knowledge_point_id` 不得作为 save-and-next 的必填输入。
+tail save-and-next 进入 placeholder 时，同样继承当前题的 `source_topic_order` 与 `source_topic_label` 作为 convenience defaults。上述 defaults 本身不 materialize 题目；如果 annotator 在首次持久化前显式修改 knowledge point 或 source-topic metadata，真正 materialize 的题目使用最终提交值。
+
+不要求用户在 save-and-next 之前重新选择专项。因此 `next_knowledge_point_id` 不得作为 save-and-next 的必填输入，也不得为了保存 defaults 而创建持久化 placeholder。
 
 ## Continuing invariants
 
 Unless an FD above explicitly supersedes an older product behavior, the following remain binding: original DOCX and `PaperVersion` provenance are immutable; `ProcessingResult` history is immutable; active selection remains independent; partial is never automatically activated and failed is never active; field provenance identifies an exact processing result and exact document block; parser output never assigns question semantics; private source content and paths never enter logs or Git; PostgreSQL 16 and disposable-test-database guards remain mandatory; provenance history uses no cascade deletion; and this slice must not weaken future submitted/approved immutability.
 
 ```text
-NEXT_STAGE = TEAM B CONTRACT REVIEW
+FROZEN_DECISION_COUNT = FD-01..FD-29; PD-30..PD-31
+NEXT_STAGE = TEAM B CONTRACT REV4 NARROW REVIEW
 ```
